@@ -1,0 +1,12 @@
+Contiguous memory allocation:
+
+- Main memory stores the instructions and data needed by active processes.
+- Contiguous allocation gives each process a single continuous block of memory.
+- Swapping temporarily moves processes between main memory and backing store.
+- Fragmentation can be internal or external.
+
+Related concepts:
+- Fixed partitioning
+- Dynamic partitioning
+- Compaction
+- Segmentation

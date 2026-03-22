@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | AI Learning System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="page-shell login-shell">
+        <section class="login-layout">
+            <article class="hero-banner login-hero">
+                <div class="hero-copy">
+                    <p class="eyebrow">PT LEE</p>
+                    <h1>LEARNING MANAGEMENT SYSTEM</h1>
+                    <p class="hero-text">
+                        Students can learn with videos, notes, AI explanations, doubts, and tests.
+                        Teachers can upload notes and manage the course content flow.
+                    </p>
+                </div>
+            </article>
+
+            <section class="panel login-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Secure Access</p>
+                        <h2>Sign in</h2>
+                    </div>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flash-stack">
+                            {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <form method="post" class="login-form">
+                    <label for="role">Login As</label>
+                    <select id="role" name="role" required>
+                        <option value="student">Student</option>
+                        <option value="teacher">Teacher</option>
+                    </select>
+
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" placeholder="name@example.com" required>
+
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" placeholder="Enter password" required>
+
+                    <button class="primary-btn full-width" type="submit">Login</button>
+                </form>
+
+                <div class="login-help">
+                    <p class="panel-text">Create your MySQL tables using <code>data/mysql_schema.sql</code> and insert users with hashed passwords.</p>
+                </div>
+            </section>
+        </section>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+CPU scheduling:
+
+- CPU scheduling chooses which ready process gets the CPU next.
+- Scheduling criteria include CPU utilization, throughput, turnaround time, waiting time, and response time.
+- Common algorithms are FCFS, SJF, Priority Scheduling, Round Robin, and Multilevel Queue.
+
+Key points:
+- Preemptive scheduling can interrupt a running process.
+- Non-preemptive scheduling waits until the process releases the CPU.
+- Round Robin is good for time-sharing systems.

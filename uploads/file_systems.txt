@@ -1,0 +1,12 @@
+File systems:
+
+- A file system organizes, stores, retrieves, and protects files on secondary storage.
+- File attributes include name, type, size, location, protection, and timestamps.
+- Access methods include sequential, direct, and indexed access.
+- Directory structures may be single-level, two-level, tree-structured, or graph-based.
+
+Important areas:
+- File protection
+- Free-space management
+- Directory implementation
+- File system mounting and sharing

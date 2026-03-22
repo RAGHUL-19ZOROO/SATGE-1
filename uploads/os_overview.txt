@@ -1,0 +1,11 @@
+Operating system overview:
+
+- An operating system acts as an interface between the user and computer hardware.
+- It manages resources such as CPU time, memory, storage devices, files, and I/O hardware.
+- Main OS goals include convenience, efficiency, fairness, and reliable execution.
+- Core services include program execution, I/O handling, file management, communication, error detection, and protection.
+
+Important ideas:
+- The kernel is the core part of the operating system.
+- Common OS structures include simple, layered, microkernel, modular, and hybrid designs.
+- The user interface can be command line, graphical, or shell based.

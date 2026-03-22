@@ -1,0 +1,15 @@
+Disk scheduling and storage structure:
+
+- Disks store data on tracks and sectors.
+- Disk access time depends on seek time, rotational latency, and transfer time.
+- Disk scheduling improves performance by ordering disk I/O requests efficiently.
+
+Algorithms:
+- FCFS
+- SSTF
+- SCAN
+- C-SCAN
+- LOOK
+
+Goal:
+- Reduce head movement and improve throughput.

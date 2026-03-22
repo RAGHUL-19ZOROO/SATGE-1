@@ -1,0 +1,12 @@
+Process concept and operations:
+
+- A process is a program in execution.
+- A process includes program code, current activity, registers, stack, heap, and process state.
+- Common states are new, ready, running, waiting, and terminated.
+- The process control block stores the process state, program counter, CPU registers, scheduling data, and memory information.
+
+Operations:
+- Process creation
+- Process termination
+- Context switching
+- Parent-child process relationships

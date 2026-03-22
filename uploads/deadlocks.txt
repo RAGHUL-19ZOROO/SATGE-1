@@ -1,0 +1,16 @@
+Deadlocks and synchronization:
+
+- A critical section is the part of a program where shared resources are accessed.
+- Synchronization tools include mutexes, semaphores, monitors, and hardware instructions.
+- A deadlock is a situation where a set of processes waits forever for resources held by one another.
+
+Deadlock conditions:
+- Mutual exclusion
+- Hold and wait
+- No preemption
+- Circular wait
+
+Handling deadlocks:
+- Prevention
+- Avoidance
+- Detection and recovery

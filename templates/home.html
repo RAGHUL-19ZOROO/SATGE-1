@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Learning System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="topbar">
+            <a class="brand" href="/">{{ course.title }}</a>
+            <nav class="topbar-links topbar-user">
+                <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                {% if current_user.role == "teacher" %}
+                <a href="/staff">Staff Upload</a>
+                {% endif %}
+                <a href="/logout">Logout</a>
+            </nav>
+        </header>
+
+        <header class="hero-banner">
+            <div class="hero-copy">
+                <p class="eyebrow">{{ course.code }}</p>
+                <h1>{{ course.title }}</h1>
+                <p class="hero-text">
+                    {{ course.description }}
+                </p>
+                <div class="hero-actions">
+                    {% if default_topic %}
+                    <a class="primary-btn" href="/topic/{{ default_topic }}">Start Learning</a>
+                    {% else %}
+                    <span class="secondary-btn">No Topics Yet</span>
+                    {% endif %}
+                    {% if current_user.role == "teacher" %}
+                    <a class="secondary-btn" href="/staff">Staff Upload</a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="hero-card-stack">
+                <article class="glass-card">
+                    <span class="card-label">LTPC</span>
+                    <h2>{{ course.ltpc }}</h2>
+                </article>
+                <article class="glass-card">
+                    <span class="card-label">AI LMS</span>
+                    <h2>Video lessons, notes, AI explanation, doubts, and MCQ practice.</h2>
+                </article>
+            </div>
+        </header>
+
+        <section class="panel syllabus-panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Course Objectives</p>
+                    <h2>Operating Systems Module</h2>
+                </div>
+            </div>
+            <ul class="bullet-list objectives-list">
+                {% for objective in course.objectives %}
+                <li>{{ objective }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <main class="topic-grid">
+            {% for unit in units %}
+            <article class="topic-card {% if loop.first %}active-topic{% endif %}">
+                <div class="topic-card-head">
+                    <span class="topic-subject">{{ unit.title }}</span>
+                    <span class="status-dot ready">{{ unit.topics|length }} Topics</span>
+                </div>
+                <h2>{{ unit.title }}</h2>
+                <p>Browse lesson videos, notes, AI explanations, doubts, and MCQs for all topics in this unit.</p>
+                {% if unit.topics %}
+                <a class="primary-btn full-width" href="/topic/{{ unit.topics[0].slug }}">Open Unit</a>
+                {% else %}
+                <span class="secondary-btn full-width">No Topics Added Yet</span>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </main>
+    </div>
+</body>
+</html>

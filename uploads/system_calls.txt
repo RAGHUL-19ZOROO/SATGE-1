@@ -1,0 +1,14 @@
+System calls and system programs:
+
+- A system call is the controlled mechanism through which a user program requests a service from the operating system kernel.
+- Typical categories include process control, file manipulation, device management, information maintenance, and communication.
+- System programs provide a convenient environment for file handling, program execution, and system utilities.
+
+Examples:
+- Opening a file
+- Creating a process
+- Reading from a device
+- Allocating memory
+
+Why they matter:
+- They provide protection by preventing applications from directly accessing sensitive hardware operations.

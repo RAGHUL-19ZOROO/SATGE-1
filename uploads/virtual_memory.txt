@@ -1,0 +1,14 @@
+Virtual memory and paging:
+
+- Virtual memory allows execution of processes that are not fully loaded into physical memory.
+- Paging divides memory into fixed-size pages and frames.
+- Demand paging loads pages only when they are needed.
+- Page replacement algorithms decide which page should be removed when memory is full.
+
+Algorithms:
+- FIFO
+- Optimal
+- LRU
+
+Problem area:
+- Thrashing happens when the system spends too much time paging instead of executing processes.

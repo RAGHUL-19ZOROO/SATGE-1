@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Panel | {{ course.title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body data-page="staff">
+    <div class="page-shell">
+        <header class="topbar">
+            <a class="brand" href="/">{{ course.title }}</a>
+            <nav class="topbar-links topbar-user">
+                <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <a href="/">Home</a>
+                <a href="/logout">Logout</a>
+            </nav>
+        </header>
+
+        <section class="panel teacher-hero">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Teacher Panel</p>
+                    <h1>Manage Units, Topics, Videos, and Notes</h1>
+                    <p class="panel-text">Create a unit first, then create topics inside that unit with a regular YouTube link and topic notes. The backend automatically stores the topic and converts the video link into an embeddable YouTube video ID.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="teacher-grid">
+            <article class="panel teacher-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Create Unit</p>
+                        <h2>Add a new unit module</h2>
+                    </div>
+                </div>
+
+                <form id="unitForm" class="upload-form">
+                    <label for="unitTitle">Unit Title</label>
+                    <input id="unitTitle" name="title" type="text" placeholder="Example: Unit V - File Protection" required>
+
+                    <button class="primary-btn" type="submit">Create Unit</button>
+                    <p id="unitStatus" class="panel-text"></p>
+                </form>
+            </article>
+
+            <article class="panel teacher-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Create Topic</p>
+                        <h2>Add a topic inside a unit</h2>
+                    </div>
+                </div>
+
+                <form id="topicForm" class="upload-form">
+                    <label for="topicUnit">Select Unit</label>
+                    <select id="topicUnit" name="unit_slug" required>
+                        <option value="">Choose a unit</option>
+                        {% for unit in units %}
+                        <option value="{{ unit.slug }}">{{ unit.title }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="topicTitle">Topic Title</label>
+                    <input id="topicTitle" name="title" type="text" placeholder="Example: Page Replacement Algorithms" required>
+
+                    <label for="topicDescription">Topic Description</label>
+                    <textarea id="topicDescription" name="description" rows="4" placeholder="Short topic summary for students"></textarea>
+
+                    <label for="youtubeUrl">YouTube Video Link</label>
+                    <input id="youtubeUrl" name="youtube_url" type="url" placeholder="https://www.youtube.com/watch?v=..." required>
+
+                    <label class="inline-check" for="noVideo">
+                        <input id="noVideo" name="no_video" type="checkbox">
+                        <span>No Video for this topic</span>
+                    </label>
+
+                    <label for="topicNotesFile">Topic Notes</label>
+                    <input id="topicNotesFile" name="notes_file" type="file" accept=".txt,.pdf">
+
+                    <button class="primary-btn" type="submit">Create Topic</button>
+                    <p id="topicStatus" class="panel-text"></p>
+                </form>
+            </article>
+
+            <article class="panel teacher-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Update Notes</p>
+                        <h2>Upload notes for an existing topic</h2>
+                    </div>
+                </div>
+
+                <form id="uploadForm" class="upload-form">
+                    <label for="topicName">Topic Name</label>
+                    <input id="topicName" name="topic_name" list="topicOptions" placeholder="Example: cpu_scheduling" required>
+                    <datalist id="topicOptions">
+                        {% for topic in topics %}
+                        <option value="{{ topic.slug }}">{{ topic.unit_title }} - {{ topic.title }}</option>
+                        {% endfor %}
+                    </datalist>
+
+                    <label for="notesFile">Notes File</label>
+                    <input id="notesFile" name="notes_file" type="file" accept=".txt,.pdf" required>
+
+                    <button class="primary-btn" type="submit">Upload Notes</button>
+                    <p id="uploadStatus" class="panel-text"></p>
+                </form>
+            </article>
+        </section>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
