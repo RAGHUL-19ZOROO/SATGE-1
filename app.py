@@ -26,6 +26,7 @@ from utils.file_handler import (
 from utils.mysql_db import get_db_connection
 from utils.student_notes import get_student_note, save_student_note
 from utils.admin_catalog import add_admin_entry, get_admin_directory
+from utils.notes_images import add_notes_image, get_notes_images
 from utils.topic_text_content import get_text_content, save_text_content
 from utils.topic_catalog import (
     create_topic,
@@ -170,6 +171,7 @@ def topic_page(topic_slug):
         course=get_course(),
         topic=topic,
         text_content=get_text_content(topic_slug),
+        notes_images=get_notes_images(topic_slug),
         units=list_units(),
         topics=list_topics(),
     )
@@ -455,6 +457,46 @@ def upload():
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/staff/notes-image", methods=["POST"])
+@teacher_required
+def upload_notes_image():
+    topic_slug = (request.form.get("topic_slug") or "").strip()
+    image_title = str(request.form.get("title") or "").strip()
+    image_file = request.files.get("image_file")
+
+    if not topic_slug:
+        return jsonify({"error": "Select a topic."}), 400
+
+    topic = get_topic(topic_slug)
+    if not topic:
+        return jsonify({"error": "Select a valid topic."}), 400
+
+    if not image_file or not image_file.filename:
+        return jsonify({"error": "Select an image file to upload."}), 400
+
+    allowed_extensions = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+    extension = Path(image_file.filename).suffix.lower()
+    if extension not in allowed_extensions:
+        return jsonify({"error": "Only PNG, JPG, JPEG, GIF, and WEBP are allowed."}), 400
+
+    upload_dir = Path("static/uploads/notes_images")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    unique_name = f"{uuid.uuid4().hex}{extension}"
+    save_path = upload_dir / unique_name
+    image_file.save(save_path)
+
+    url = f"/static/uploads/notes_images/{unique_name}"
+    entry = add_notes_image(topic_slug, image_title, url)
+    return jsonify(
+        {
+            "message": "Notes image uploaded successfully.",
+            "image": entry,
+            "topic": topic_slug,
+        }
+    )
 
 
 @app.route("/staff/unit", methods=["POST"])

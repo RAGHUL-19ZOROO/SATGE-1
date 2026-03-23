@@ -183,6 +183,19 @@
                                     </div>
                                 </article>
                                 {% endif %}
+                                {% if notes_images %}
+                                <article class="content-card lesson-grid-wide">
+                                    <h3>Topic Images</h3>
+                                    <div class="image-grid">
+                                        {% for item in notes_images %}
+                                        <a class="image-card" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
+                                            <img src="{{ item.url }}" alt="{{ item.title or 'Topic image' }}">
+                                            <span>{{ item.title or "Reference Image" }}</span>
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                </article>
+                                {% endif %}
                                 <article class="content-card lesson-grid-wide">
                                     <h3>DA</h3>
                                     <p class="panel-text">Need clarification? Open DA to message staff or students directly.</p>
@@ -208,6 +221,20 @@
                                             {% if topic.has_notes %}Ready{% else %}Pending{% endif %}
                                         </span>
                                     </div>
+
+                                    {% if notes_images %}
+                                    <div class="action-stack">
+                                        <h3>Notes Images</h3>
+                                        <div class="image-grid">
+                                            {% for item in notes_images %}
+                                            <a class="image-card" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
+                                                <img src="{{ item.url }}" alt="{{ item.title or 'Notes image' }}">
+                                                <span>{{ item.title or "Reference Image" }}</span>
+                                            </a>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
                                 </article>
 
                                 <article class="content-card student-note-card">

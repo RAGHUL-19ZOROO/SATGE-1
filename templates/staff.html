@@ -98,6 +98,25 @@
                     <button class="primary-btn" type="submit">Upload Notes</button>
                     <p id="uploadStatus" class="panel-text" role="status" aria-live="polite"></p>
                 </form>
+
+                <form id="notesImageForm" class="upload-form">
+                    <label for="notesImageTopicSlug">Notes Image Topic</label>
+                    <select id="notesImageTopicSlug" name="topic_slug" required>
+                        <option value="">Choose a topic</option>
+                        {% for topic in topics %}
+                        <option value="{{ topic.slug }}">{{ topic.unit_title }} - {{ topic.title }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="notesImageTitle">Image Title (optional)</label>
+                    <input id="notesImageTitle" name="title" type="text" placeholder="Example: CPU scheduling chart">
+
+                    <label for="notesImageFile">Image File</label>
+                    <input id="notesImageFile" name="image_file" type="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" required>
+
+                    <button class="secondary-btn action-upload-btn" type="submit">Upload Notes Image</button>
+                    <p id="notesImageStatus" class="panel-text" role="status" aria-live="polite"></p>
+                </form>
             </article>
 
             <article class="panel teacher-card">

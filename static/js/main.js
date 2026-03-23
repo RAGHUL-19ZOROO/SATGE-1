@@ -286,6 +286,38 @@ async function handleUpload() {
     }
 }
 
+async function handleNotesImageUpload() {
+    const form = document.getElementById("notesImageForm");
+    const status = document.getElementById("notesImageStatus");
+    const button = form ? form.querySelector("button[type='submit']") : null;
+
+    if (!form || !status || !button) {
+        return;
+    }
+
+    const formData = new FormData(form);
+    status.innerText = "Uploading notes image...";
+    setButtonLoading(button, true, "Upload Notes Image", "Uploading...");
+
+    try {
+        const response = await fetch("/staff/notes-image", {
+            method: "POST",
+            body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || "Unable to upload notes image.");
+        }
+
+        status.innerText = data.message || "Notes image uploaded.";
+        form.reset();
+    } catch (error) {
+        status.innerText = error.message || "Unable to upload notes image.";
+    } finally {
+        setButtonLoading(button, false, "Upload Notes Image", "Uploading...");
+    }
+}
+
 async function handleContentCreate() {
     const form = document.getElementById("contentForm");
     const status = document.getElementById("contentStatus");
@@ -869,6 +901,14 @@ document.addEventListener("DOMContentLoaded", () => {
             event.preventDefault();
             handleUpload();
         });
+
+        const notesImageForm = document.getElementById("notesImageForm");
+        if (notesImageForm) {
+            notesImageForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                handleNotesImageUpload();
+            });
+        }
 
         const textContentForm = document.getElementById("textContentForm");
         if (textContentForm) {
