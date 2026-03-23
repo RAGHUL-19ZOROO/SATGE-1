@@ -38,7 +38,7 @@
                         <p class="eyebrow">Contacts</p>
                         <h2>Available Chat Users</h2>
                     </div>
-                    <span id="dmStatus" class="status-chip">Loading</span>
+                    <span id="dmStatus" class="status-chip" role="status" aria-live="polite">Loading</span>
                 </div>
                 <div id="dmContacts" class="dm-contacts-list"></div>
             </aside>
@@ -51,7 +51,7 @@
                     </div>
                 </div>
 
-                <div id="dmMessages" class="chat-history dm-chat-history"></div>
+                <div id="dmMessages" class="chat-history dm-chat-history" role="log" aria-live="polite" aria-relevant="additions"></div>
 
                 <div class="composer-card">
                     <label for="dmInput">Type your message</label>

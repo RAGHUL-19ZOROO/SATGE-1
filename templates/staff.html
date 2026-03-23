@@ -71,7 +71,7 @@
                     <input id="topicNotesFile" name="notes_file" type="file" accept=".txt,.pdf">
 
                     <button class="primary-btn" type="submit">Create Content</button>
-                    <p id="contentStatus" class="panel-text"></p>
+                    <p id="contentStatus" class="panel-text" role="status" aria-live="polite"></p>
                 </form>
             </article>
 
@@ -96,7 +96,7 @@
                     <input id="notesFile" name="notes_file" type="file" accept=".txt,.pdf" required>
 
                     <button class="primary-btn" type="submit">Upload Notes</button>
-                    <p id="uploadStatus" class="panel-text"></p>
+                    <p id="uploadStatus" class="panel-text" role="status" aria-live="polite"></p>
                 </form>
             </article>
 
@@ -129,7 +129,7 @@
                     <div class="dynamic-block">
                         <div class="dynamic-head">
                             <label>Extra Fields</label>
-                            <button id="addExtraFieldButton" class="secondary-btn" type="button">Add Field</button>
+                            <button id="addExtraFieldButton" class="secondary-btn action-add-btn" type="button">+ Add Field</button>
                         </div>
                         <div id="extraFieldsContainer" class="dynamic-list"></div>
                     </div>
@@ -137,7 +137,7 @@
                     <div class="dynamic-block">
                         <div class="dynamic-head">
                             <label>Related URLs</label>
-                            <button id="addRelatedUrlButton" class="secondary-btn" type="button">Add URL</button>
+                            <button id="addRelatedUrlButton" class="secondary-btn action-add-btn" type="button">+ Add URL</button>
                         </div>
                         <div id="relatedUrlsContainer" class="dynamic-list"></div>
                     </div>
@@ -145,7 +145,7 @@
                     <div class="dynamic-block">
                         <div class="dynamic-head">
                             <label>Image References</label>
-                            <button id="addImageRefButton" class="secondary-btn" type="button">Add Image URL</button>
+                            <button id="addImageRefButton" class="secondary-btn action-add-btn" type="button">+ Add Image URL</button>
                         </div>
                         <div id="imageRefsContainer" class="dynamic-list"></div>
                     </div>
@@ -157,13 +157,13 @@
                         <div class="dynamic-row upload-image-row">
                             <input id="textImageTitle" type="text" placeholder="Image Title (optional)">
                             <input id="textImageFile" type="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp">
-                            <button id="uploadTextImageButton" class="secondary-btn" type="button">Upload</button>
+                            <button id="uploadTextImageButton" class="secondary-btn action-upload-btn" type="button">Upload</button>
                         </div>
-                        <p id="textImageUploadStatus" class="panel-text"></p>
+                        <p id="textImageUploadStatus" class="panel-text" role="status" aria-live="polite"></p>
                     </div>
 
                     <button class="primary-btn" type="submit">Save Text Content</button>
-                    <p id="textContentStatus" class="panel-text"></p>
+                    <p id="textContentStatus" class="panel-text" role="status" aria-live="polite"></p>
                 </form>
             </article>
 

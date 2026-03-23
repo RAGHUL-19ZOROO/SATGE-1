@@ -69,11 +69,55 @@ function formatSavedTime(value) {
 
 function activateTab(targetId) {
     document.querySelectorAll(".player-tab").forEach((tab) => {
-        tab.classList.toggle("is-active", tab.dataset.tabTarget === targetId);
+        const isActive = tab.dataset.tabTarget === targetId;
+        tab.classList.toggle("is-active", isActive);
+        tab.setAttribute("aria-selected", isActive ? "true" : "false");
+        tab.setAttribute("tabindex", isActive ? "0" : "-1");
     });
 
     document.querySelectorAll(".player-tab-panel").forEach((panel) => {
-        panel.classList.toggle("is-active", panel.id === targetId);
+        const isActive = panel.id === targetId;
+        panel.classList.toggle("is-active", isActive);
+        panel.hidden = !isActive;
+    });
+}
+
+function setupTabKeyboardNavigation() {
+    const tabs = Array.from(document.querySelectorAll(".player-tab"));
+    if (!tabs.length) {
+        return;
+    }
+
+    tabs.forEach((tab, index) => {
+        tab.addEventListener("keydown", (event) => {
+            if (!["ArrowRight", "ArrowLeft", "Home", "End", "Enter", " "].includes(event.key)) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (event.key === "Enter" || event.key === " ") {
+                tab.click();
+                return;
+            }
+
+            let nextIndex = index;
+            if (event.key === "ArrowRight") {
+                nextIndex = (index + 1) % tabs.length;
+            } else if (event.key === "ArrowLeft") {
+                nextIndex = (index - 1 + tabs.length) % tabs.length;
+            } else if (event.key === "Home") {
+                nextIndex = 0;
+            } else if (event.key === "End") {
+                nextIndex = tabs.length - 1;
+            }
+
+            const nextTab = tabs[nextIndex];
+            if (nextTab) {
+                nextTab.focus();
+                nextTab.click();
+            }
+        });
     });
 }
 
@@ -438,8 +482,8 @@ function buildDynamicRow(className, firstClass, firstPlaceholder, secondClass, s
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.className = "secondary-btn";
-    removeButton.innerText = "Remove";
+    removeButton.className = "secondary-btn action-remove-btn";
+    removeButton.innerText = "- Remove";
     removeButton.addEventListener("click", () => row.remove());
 
     row.appendChild(first);
@@ -702,8 +746,8 @@ async function initDmPage() {
             renderDmMessages(payload.messages || []);
             dmStatus.innerText = "Ready";
         } catch (error) {
-            dmStatus.innerText = "Retry";
-            alert(error.message || "Unable to send message.");
+            const message = error.message || "Unable to send message.";
+            dmStatus.innerText = `Retry · ${message}`;
         } finally {
             setButtonLoading(dmSendButton, false, "Send Message", "Sending...");
         }
@@ -731,12 +775,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (watchVideoTopButton && readNotesTopButton) {
             const setTopSwitchState = (activeButton) => {
-                watchVideoTopButton.classList.toggle("is-active", activeButton === "video");
-                readNotesTopButton.classList.toggle("is-active", activeButton === "notes");
+                const videoActive = activeButton === "video";
+                const notesActive = activeButton === "notes";
+                watchVideoTopButton.classList.toggle("is-active", videoActive);
+                readNotesTopButton.classList.toggle("is-active", notesActive);
+                watchVideoTopButton.setAttribute("aria-pressed", videoActive ? "true" : "false");
+                readNotesTopButton.setAttribute("aria-pressed", notesActive ? "true" : "false");
             };
 
             if (watchVideoTopButton.disabled) {
                 setTopSwitchState("notes");
+                activateTab("textTab");
             }
 
             watchVideoTopButton.addEventListener("click", () => {
@@ -749,13 +798,17 @@ document.addEventListener("DOMContentLoaded", () => {
             });
 
             readNotesTopButton.addEventListener("click", () => {
-                activateTab("notesTab");
+                activateTab("textTab");
                 setTopSwitchState("notes");
+                const textPanel = document.getElementById("textTab");
+                if (textPanel) {
+                    textPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+                }
             });
 
             document.querySelectorAll(".player-tab").forEach((tab) => {
                 tab.addEventListener("click", () => {
-                    if (tab.dataset.tabTarget === "notesTab") {
+                    if (tab.dataset.tabTarget === "notesTab" || tab.dataset.tabTarget === "textTab") {
                         setTopSwitchState("notes");
                     } else if (tab.dataset.tabTarget === "overviewTab") {
                         setTopSwitchState("video");
@@ -767,6 +820,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.querySelectorAll(".player-tab").forEach((tab) => {
             tab.addEventListener("click", () => activateTab(tab.dataset.tabTarget));
         });
+        setupTabKeyboardNavigation();
 
         const saveStudentNotesButton = document.getElementById("saveStudentNotesButton");
         const studentNotesInput = document.getElementById("studentNotesInput");

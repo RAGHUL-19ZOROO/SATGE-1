@@ -67,10 +67,7 @@
                             <p class="panel-text">{{ topic.description }}</p>
                         </div>
                         <div class="topic-meta-right">
-                            <div class="content-mode-switch" aria-label="Content mode switch">
-                                <button class="topic-switch-pill is-active" type="button" id="watchVideoTopButton" {% if not topic.video_id %}disabled{% endif %}>Watch Video</button>
-                                <button class="topic-switch-pill" type="button" id="readNotesTopButton">Read Notes</button>
-                            </div>
+            
                             <div class="topic-pills">
                                 <span class="topic-pill">{{ topic.unit_title }}</span>
                                 <span class="topic-pill {% if topic.has_notes %}success{% endif %}">
@@ -107,14 +104,14 @@
                 </section>
 
                 <section class="panel player-tabs-panel">
-                    <nav class="player-tabs" aria-label="Lesson sections">
-                        <button class="player-tab is-active" type="button" data-tab-target="overviewTab">Overview</button>
-                        <button class="player-tab" type="button" data-tab-target="textTab">Text Content</button>
-                        <button class="player-tab" type="button" data-tab-target="notesTab">Notes</button>
+                    <nav class="player-tabs" aria-label="Lesson sections" role="tablist">
+                        <button id="overviewTabButton" class="player-tab is-active" type="button" data-tab-target="overviewTab" role="tab" aria-selected="true" aria-controls="overviewTab" tabindex="0">Overview</button>
+                        <button id="textTabButton" class="player-tab" type="button" data-tab-target="textTab" role="tab" aria-selected="false" aria-controls="textTab" tabindex="-1">Text Content</button>
+                        <button id="notesTabButton" class="player-tab" type="button" data-tab-target="notesTab" role="tab" aria-selected="false" aria-controls="notesTab" tabindex="-1">Notes</button>
                     </nav>
 
                     <div class="player-tab-panels">
-                        <section id="overviewTab" class="player-tab-panel is-active">
+                        <section id="overviewTab" class="player-tab-panel is-active" role="tabpanel" aria-labelledby="overviewTabButton">
                             <div class="overview-grid">
                                 <article class="content-card">
                                     <h3>Topic Overview</h3>
@@ -128,15 +125,18 @@
                                 <article class="content-card">
                                     <h3>Quick Actions</h3>
                                     <div class="action-stack">
-                                        <button class="primary-btn" type="button" onclick="document.querySelector('[data-tab-target=&quot;textTab&quot;]').click();">Open Text Content</button>
+                                        {% if topic.has_notes %}
                                         <a id="downloadNotesButton" class="secondary-btn" href="/download/{{ topic.slug }}">Download Notes</a>
+                                        {% else %}
+                                        <span class="secondary-btn" aria-disabled="true">Notes Not Available</span>
+                                        {% endif %}
                                         <span class="status-chip">Ready</span>
                                     </div>
                                 </article>
                             </div>
                         </section>
 
-                        <section id="textTab" class="player-tab-panel">
+                        <section id="textTab" class="player-tab-panel" role="tabpanel" aria-labelledby="textTabButton" hidden>
                             <div class="lesson-grid">
                                 <article class="content-card">
                                     <h3>Explanation</h3>
@@ -191,7 +191,7 @@
                             </div>
                         </section>
 
-                        <section id="notesTab" class="player-tab-panel">
+                        <section id="notesTab" class="player-tab-panel" role="tabpanel" aria-labelledby="notesTabButton" hidden>
                             <div class="notes-grid">
                                 <article class="content-card">
                                     <h3>Topic Notes</h3>
@@ -216,13 +216,13 @@
                                             <p class="eyebrow">Student Notes</p>
                                             <h3>Write while watching</h3>
                                         </div>
-                                        <span id="studentNotesStatus" class="status-chip">Loading</span>
+                                        <span id="studentNotesStatus" class="status-chip" role="status" aria-live="polite">Loading</span>
                                     </div>
                                     <p class="panel-text">Capture quick points, formulas, doubts, and revision ideas for this topic. Your notes are saved for your account.</p>
                                     <div class="student-notes-editor">
                                         <textarea id="studentNotesInput" rows="12" placeholder="Write your own notes here while watching the lesson..."></textarea>
                                         <div class="student-notes-meta">
-                                            <span id="studentNotesMeta" class="panel-text">No saved notes yet.</span>
+                                            <span id="studentNotesMeta" class="panel-text" role="status" aria-live="polite">No saved notes yet.</span>
                                             <button id="saveStudentNotesButton" class="primary-btn" type="button">Save My Notes</button>
                                         </div>
                                     </div>
