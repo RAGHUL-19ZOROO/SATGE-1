@@ -151,6 +151,16 @@ def list_admin_users():
     return users
 
 
+def get_admin_users_payload():
+    users = []
+    user_error = ""
+    try:
+        users = list_admin_users()
+    except MySQLError:
+        user_error = "Unable to load user list from database."
+    return users, user_error
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if current_user():
@@ -431,17 +441,47 @@ def upload_text_content_image():
 @app.route("/admin")
 @admin_required
 def admin_page():
-    users = []
-    user_error = ""
-    try:
-        users = list_admin_users()
-    except MySQLError:
-        user_error = "Unable to load user list from database."
+    users, user_error = get_admin_users_payload()
+
+    directory = get_admin_directory()
+    curriculum = get_curriculum()
 
     return render_template(
         "admin.html",
+        directory=directory,
+        curriculum=curriculum,
+        admin_users=users,
+        admin_users_error=user_error,
+        course=get_course(),
+    )
+
+
+@app.route("/admin/directory-page")
+@admin_required
+def admin_directory_page():
+    return render_template(
+        "admin_directory.html",
         directory=get_admin_directory(),
+        course=get_course(),
+    )
+
+
+@app.route("/admin/curriculum-page")
+@admin_required
+def admin_curriculum_page():
+    return render_template(
+        "admin_curriculum.html",
         curriculum=get_curriculum(),
+        course=get_course(),
+    )
+
+
+@app.route("/admin/users-page")
+@admin_required
+def admin_users_page():
+    users, user_error = get_admin_users_payload()
+    return render_template(
+        "admin_users.html",
         admin_users=users,
         admin_users_error=user_error,
         course=get_course(),

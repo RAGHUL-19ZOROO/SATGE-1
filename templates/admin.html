@@ -36,8 +36,8 @@
             <div class="panel-header">
                 <div>
                     <p class="eyebrow">Admin Control</p>
-                    <h1>Manage Departments, Subjects, Staff, and Students</h1>
-                    <p class="panel-text">Configure Anna University style department curriculum and create staff/student login accounts with email and password.</p>
+                    <h1>Admin Home</h1>
+                    <p class="panel-text">Use dedicated pages to manage directory entries, curriculum, and user accounts.</p>
                 </div>
             </div>
         </section>
@@ -46,188 +46,47 @@
             <article class="panel admin-card">
                 <div class="panel-header">
                     <div>
-                        <p class="eyebrow">Add Entry</p>
-                        <h2>Directory Manager</h2>
+                        <p class="eyebrow">Page</p>
+                        <h2>Directory Management</h2>
                     </div>
                 </div>
-
-                <form id="adminDirectoryForm" class="upload-form">
-                    <label for="adminSection">Section</label>
-                    <select id="adminSection" name="section" required>
-                        <option value="">Choose section</option>
-                        <option value="semester">Semester</option>
-                        <option value="courses">Courses</option>
-                        <option value="staff">Staff</option>
-                        <option value="student">Student</option>
-                    </select>
-
-                    <label for="adminName">Name</label>
-                    <input id="adminName" name="name" type="text" placeholder="Example: Semester 3 / OS Faculty / Student Batch" required>
-
-                    <label for="adminDetails">Details (optional)</label>
-                    <textarea id="adminDetails" name="details" rows="4" placeholder="Department, section, contact, specialization, etc."></textarea>
-
-                    <button class="primary-btn" type="submit">Add Entry</button>
-                    <p id="adminDirectoryStatus" class="panel-text" role="status" aria-live="polite"></p>
-                </form>
+                <p class="panel-text">Add and review Semester, Courses, Staff, and Student directory data.</p>
+                <div class="action-row">
+                    <a class="primary-btn" href="/admin/directory-page">Open Directory Page</a>
+                </div>
+                <p class="panel-text">Current records: {{ (directory.semester|length) + (directory.courses|length) + (directory.staff|length) + (directory.student|length) }}</p>
             </article>
 
             <article class="panel admin-card">
                 <div class="panel-header">
                     <div>
-                        <p class="eyebrow">Anna Curriculum</p>
-                        <h2>Add Department</h2>
+                        <p class="eyebrow">Page</p>
+                        <h2>Curriculum Management</h2>
                     </div>
                 </div>
-
-                <form id="departmentForm" class="upload-form">
-                    <label for="departmentCode">Department Code</label>
-                    <input id="departmentCode" name="code" type="text" placeholder="Example: CSE" required>
-
-                    <label for="departmentName">Department Name</label>
-                    <input id="departmentName" name="name" type="text" placeholder="Computer Science and Engineering" required>
-
-                    <button class="primary-btn" type="submit">Add Department</button>
-                    <p id="departmentStatus" class="panel-text" role="status" aria-live="polite"></p>
-                </form>
-
-                <div class="admin-list">
-                    {% if curriculum.departments %}
-                        {% for item in curriculum.departments %}
-                        <article class="admin-list-item">
-                            <strong>{{ item.code }} · {{ item.name }}</strong>
-                        </article>
-                        {% endfor %}
-                    {% else %}
-                        <p class="panel-text">No departments added yet.</p>
-                    {% endif %}
+                <p class="panel-text">Add departments and subject codes with semester mapping.</p>
+                <div class="action-row">
+                    <a class="primary-btn" href="/admin/curriculum-page">Open Curriculum Page</a>
                 </div>
+                <p class="panel-text">Departments: {{ curriculum.departments|length }} · Subjects: {{ curriculum.subjects|length }}</p>
             </article>
 
             <article class="panel admin-card">
                 <div class="panel-header">
                     <div>
-                        <p class="eyebrow">Anna Curriculum</p>
-                        <h2>Add Subject With Code</h2>
+                        <p class="eyebrow">Page</p>
+                        <h2>User Account Management</h2>
                     </div>
                 </div>
-
-                <form id="subjectForm" class="upload-form">
-                    <label for="subjectDepartment">Department</label>
-                    <select id="subjectDepartment" name="department_slug" required>
-                        <option value="">Choose department</option>
-                        {% for item in curriculum.departments %}
-                        <option value="{{ item.slug }}">{{ item.code }} - {{ item.name }}</option>
-                        {% endfor %}
-                    </select>
-
-                    <label for="subjectCode">Subject Code</label>
-                    <input id="subjectCode" name="subject_code" type="text" placeholder="Example: CS3451" required>
-
-                    <label for="subjectTitle">Subject Title</label>
-                    <input id="subjectTitle" name="title" type="text" placeholder="Operating Systems" required>
-
-                    <label for="subjectSemester">Semester (optional)</label>
-                    <input id="subjectSemester" name="semester" type="text" placeholder="Example: 3">
-
-                    <button class="primary-btn" type="submit">Add Subject</button>
-                    <p id="subjectStatus" class="panel-text" role="status" aria-live="polite"></p>
-                </form>
-            </article>
-
-            <article class="panel admin-card">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">Accounts</p>
-                        <h2>Create Staff or Student Login</h2>
-                    </div>
+                <p class="panel-text">Create and review staff and student accounts from a dedicated page.</p>
+                <div class="action-row">
+                    <a class="primary-btn" href="/admin/users-page">Open Users Page</a>
                 </div>
-
-                <form id="adminUserForm" class="upload-form">
-                    <label for="adminUserName">Full Name</label>
-                    <input id="adminUserName" name="full_name" type="text" placeholder="Example: John Doe" required>
-
-                    <label for="adminUserEmail">Email</label>
-                    <input id="adminUserEmail" name="email" type="email" placeholder="name@college.edu" required>
-
-                    <label for="adminUserPassword">Password</label>
-                    <input id="adminUserPassword" name="password" type="password" placeholder="Minimum 6 characters" required>
-
-                    <label for="adminUserRole">Role</label>
-                    <select id="adminUserRole" name="role" required>
-                        <option value="">Choose role</option>
-                        <option value="staff">Staff</option>
-                        <option value="student">Student</option>
-                    </select>
-
-                    <button class="primary-btn" type="submit">Create Account</button>
-                    <p id="adminUserStatus" class="panel-text" role="status" aria-live="polite"></p>
-                </form>
-            </article>
-
-            <article class="panel admin-card">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">Semester</p>
-                        <h2>Configured Semesters</h2>
-                    </div>
-                </div>
-                <div class="admin-list">
-                    {% if directory.semester %}
-                        {% for item in directory.semester %}
-                        <article class="admin-list-item">
-                            <strong>{{ item.name }}</strong>
-                            <p class="panel-text">{{ item.details or "No details" }}</p>
-                        </article>
-                        {% endfor %}
-                    {% else %}
-                        <p class="panel-text">No semester entries yet.</p>
-                    {% endif %}
-                </div>
-            </article>
-
-            <article class="panel admin-card">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">Subjects</p>
-                        <h2>Department Subjects (Code Based)</h2>
-                    </div>
-                </div>
-                <div class="admin-list">
-                    {% if curriculum.subjects %}
-                        {% for item in curriculum.subjects %}
-                        <article class="admin-list-item">
-                            <strong>{{ item.subject_code }} · {{ item.title }}</strong>
-                            <p class="panel-text">{{ item.department_code }} {{ item.department_name }} {% if item.semester %}· Semester {{ item.semester }}{% endif %}</p>
-                        </article>
-                        {% endfor %}
-                    {% else %}
-                        <p class="panel-text">No subjects added yet.</p>
-                    {% endif %}
-                </div>
-            </article>
-
-            <article class="panel admin-card">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">Accounts</p>
-                        <h2>Registered Users</h2>
-                    </div>
-                </div>
-                <div class="admin-list">
-                    {% if admin_users %}
-                        {% for item in admin_users %}
-                        <article class="admin-list-item">
-                            <strong>{{ item.full_name }}</strong>
-                            <p class="panel-text">{{ item.email }} · {{ item.role|title }} {% if not item.is_active %}· Inactive{% endif %}</p>
-                        </article>
-                        {% endfor %}
-                    {% elif admin_users_error %}
-                        <p class="panel-text">{{ admin_users_error }}</p>
-                    {% else %}
-                        <p class="panel-text">No users found yet.</p>
-                    {% endif %}
-                </div>
+                {% if admin_users_error %}
+                <p class="panel-text">{{ admin_users_error }}</p>
+                {% else %}
+                <p class="panel-text">Registered users: {{ admin_users|length }}</p>
+                {% endif %}
             </article>
         </section>
     </div>

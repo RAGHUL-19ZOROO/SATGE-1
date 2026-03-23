@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Users | {{ app_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version('css/style.css') }}">
+</head>
+<body data-page="admin">
+    <div class="page-shell">
+        <header class="topbar">
+            <a class="brand" href="/">{{ app_name }}</a>
+            <nav class="topbar-links topbar-user">
+                <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
+                <a href="/admin">Admin Home</a>
+                <a href="/admin/directory-page">Directory</a>
+                <a href="/admin/curriculum-page">Curriculum</a>
+                <a href="/dm">DM</a>
+                <a href="/logout">Logout</a>
+            </nav>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-stack page-flash-stack">
+                {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="panel teacher-hero">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Admin Page</p>
+                    <h1>User Account Management</h1>
+                    <p class="panel-text">Create and review staff and student login accounts.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-grid">
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Accounts</p>
+                        <h2>Create Staff or Student Login</h2>
+                    </div>
+                </div>
+
+                <form id="adminUserForm" class="upload-form">
+                    <label for="adminUserName">Full Name</label>
+                    <input id="adminUserName" name="full_name" type="text" placeholder="Example: John Doe" required>
+
+                    <label for="adminUserEmail">Email</label>
+                    <input id="adminUserEmail" name="email" type="email" placeholder="name@college.edu" required>
+
+                    <label for="adminUserPassword">Password</label>
+                    <input id="adminUserPassword" name="password" type="password" placeholder="Minimum 6 characters" required>
+
+                    <label for="adminUserRole">Role</label>
+                    <select id="adminUserRole" name="role" required>
+                        <option value="">Choose role</option>
+                        <option value="staff">Staff</option>
+                        <option value="student">Student</option>
+                    </select>
+
+                    <button class="primary-btn" type="submit">Create Account</button>
+                    <p id="adminUserStatus" class="panel-text" role="status" aria-live="polite"></p>
+                </form>
+            </article>
+
+            <article class="panel admin-card lesson-grid-wide">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Accounts</p>
+                        <h2>Registered Users</h2>
+                    </div>
+                </div>
+                <div class="admin-list">
+                    {% if admin_users %}
+                        {% for item in admin_users %}
+                        <article class="admin-list-item">
+                            <strong>{{ item.full_name }}</strong>
+                            <p class="panel-text">{{ item.email }} · {{ item.role|title }} {% if not item.is_active %}· Inactive{% endif %}</p>
+                        </article>
+                        {% endfor %}
+                    {% elif admin_users_error %}
+                        <p class="panel-text">{{ admin_users_error }}</p>
+                    {% else %}
+                        <p class="panel-text">No users found yet.</p>
+                    {% endif %}
+                </div>
+            </article>
+        </section>
+    </div>
+
+    <script src="/static/js/main.js?v={{ asset_version('js/main.js') }}"></script>
+</body>
+</html>

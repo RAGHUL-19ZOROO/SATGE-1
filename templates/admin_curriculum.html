@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Curriculum | {{ app_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version('css/style.css') }}">
+</head>
+<body data-page="admin">
+    <div class="page-shell">
+        <header class="topbar">
+            <a class="brand" href="/">{{ app_name }}</a>
+            <nav class="topbar-links topbar-user">
+                <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
+                <a href="/admin">Admin Home</a>
+                <a href="/admin/directory-page">Directory</a>
+                <a href="/admin/users-page">Users</a>
+                <a href="/dm">DM</a>
+                <a href="/logout">Logout</a>
+            </nav>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-stack page-flash-stack">
+                {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="panel teacher-hero">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Admin Page</p>
+                    <h1>Curriculum Management</h1>
+                    <p class="panel-text">Manage department and subject catalog aligned to Anna University style subject codes.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-grid">
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Anna Curriculum</p>
+                        <h2>Add Department</h2>
+                    </div>
+                </div>
+
+                <form id="departmentForm" class="upload-form">
+                    <label for="departmentCode">Department Code</label>
+                    <input id="departmentCode" name="code" type="text" placeholder="Example: CSE" required>
+
+                    <label for="departmentName">Department Name</label>
+                    <input id="departmentName" name="name" type="text" placeholder="Computer Science and Engineering" required>
+
+                    <button class="primary-btn" type="submit">Add Department</button>
+                    <p id="departmentStatus" class="panel-text" role="status" aria-live="polite"></p>
+                </form>
+
+                <div class="admin-list">
+                    {% if curriculum.departments %}
+                        {% for item in curriculum.departments %}
+                        <article class="admin-list-item">
+                            <strong>{{ item.code }} · {{ item.name }}</strong>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <p class="panel-text">No departments added yet.</p>
+                    {% endif %}
+                </div>
+            </article>
+
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Anna Curriculum</p>
+                        <h2>Add Subject With Code</h2>
+                    </div>
+                </div>
+
+                <form id="subjectForm" class="upload-form">
+                    <label for="subjectDepartment">Department</label>
+                    <select id="subjectDepartment" name="department_slug" required>
+                        <option value="">Choose department</option>
+                        {% for item in curriculum.departments %}
+                        <option value="{{ item.slug }}">{{ item.code }} - {{ item.name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="subjectCode">Subject Code</label>
+                    <input id="subjectCode" name="subject_code" type="text" placeholder="Example: CS3451" required>
+
+                    <label for="subjectTitle">Subject Title</label>
+                    <input id="subjectTitle" name="title" type="text" placeholder="Operating Systems" required>
+
+                    <label for="subjectSemester">Semester (optional)</label>
+                    <input id="subjectSemester" name="semester" type="text" placeholder="Example: 3">
+
+                    <button class="primary-btn" type="submit">Add Subject</button>
+                    <p id="subjectStatus" class="panel-text" role="status" aria-live="polite"></p>
+                </form>
+            </article>
+
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Subjects</p>
+                        <h2>Department Subjects (Code Based)</h2>
+                    </div>
+                </div>
+                <div class="admin-list">
+                    {% if curriculum.subjects %}
+                        {% for item in curriculum.subjects %}
+                        <article class="admin-list-item">
+                            <strong>{{ item.subject_code }} · {{ item.title }}</strong>
+                            <p class="panel-text">{{ item.department_code }} {{ item.department_name }} {% if item.semester %}· Semester {{ item.semester }}{% endif %}</p>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <p class="panel-text">No subjects added yet.</p>
+                    {% endif %}
+                </div>
+            </article>
+        </section>
+    </div>
+
+    <script src="/static/js/main.js?v={{ asset_version('js/main.js') }}"></script>
+</body>
+</html>

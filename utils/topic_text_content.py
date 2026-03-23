@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import re
 from urllib.parse import urlsplit
 
 
@@ -13,12 +14,34 @@ _IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", "
 
 
 def _looks_like_image_url(url):
-    parsed = urlsplit(str(url or "").strip())
-    if parsed.scheme not in {"http", "https"}:
+    raw = str(url or "").strip()
+    if not raw:
         return False
 
-    suffix = Path(parsed.path or "").suffix.lower()
-    return bool(suffix and suffix in _IMAGE_EXTENSIONS)
+    if raw.lower().startswith("data:image/"):
+        return True
+
+    parsed = urlsplit(raw)
+    # Allow same-origin absolute paths (for app-hosted uploads) and http/https URLs.
+    if parsed.scheme and parsed.scheme not in {"http", "https"}:
+        return False
+
+    path_and_query = f"{parsed.path}?{parsed.query}".lower()
+
+    # Match common image extensions even if they appear in proxy/query links.
+    extension_match = re.search(
+        r"\.(png|jpe?g|gif|webp|svg|bmp|avif)(?:$|[?#&/:;%])",
+        path_and_query,
+    )
+    if extension_match:
+        return True
+
+    # Some CDNs/proxies store the image type in query params (format=jpg, ext=png...).
+    query_match = re.search(
+        r"(?:^|[?&])(format|fmt|ext|type|output)=(png|jpe?g|gif|webp|svg|bmp|avif)(?:$|[&#])",
+        f"?{parsed.query}".lower(),
+    )
+    return bool(query_match)
 
 
 def _load_all():
@@ -68,6 +91,25 @@ def get_text_content(topic_slug):
         images = []
 
     normalized_related_urls = []
+    normalized_images = []
+
+    seen_related = set()
+    seen_images = set()
+
+    def add_related(title, url):
+        key = url.strip().lower()
+        if not key or key in seen_related:
+            return
+        seen_related.add(key)
+        normalized_related_urls.append({"title": title, "url": url})
+
+    def add_image(title, url):
+        key = url.strip().lower()
+        if not key or key in seen_images:
+            return
+        seen_images.add(key)
+        normalized_images.append({"title": title, "url": url})
+
     for item in related_urls:
         if not isinstance(item, dict):
             continue
@@ -75,9 +117,11 @@ def get_text_content(topic_slug):
         url = str(item.get("url") or "").strip()
         if not url:
             continue
-        normalized_related_urls.append({"title": title, "url": url})
+        if _looks_like_image_url(url):
+            add_image(title, url)
+        else:
+            add_related(title, url)
 
-    normalized_images = []
     for item in images:
         if not isinstance(item, dict):
             continue
@@ -87,10 +131,10 @@ def get_text_content(topic_slug):
             continue
 
         if _looks_like_image_url(url):
-            normalized_images.append({"title": title, "url": url})
+            add_image(title, url)
         else:
             # If an item was mistakenly saved under images, show it as a normal link.
-            normalized_related_urls.append({"title": title, "url": url})
+            add_related(title, url)
 
     return {
         "explanation": str(entry.get("explanation") or ""),
@@ -136,15 +180,20 @@ def save_text_content(topic_slug, explanation, example, analogy, extra_fields=No
             cleaned_extra_fields.append({"label": label, "value": value})
 
     cleaned_related_urls = []
+    cleaned_images = []
     for item in (related_urls or []):
         if not isinstance(item, dict):
             continue
         title = str(item.get("title") or "").strip()
         url = str(item.get("url") or "").strip()
-        if url:
+        if not url:
+            continue
+
+        if _looks_like_image_url(url):
+            cleaned_images.append({"title": title, "url": url})
+        else:
             cleaned_related_urls.append({"title": title, "url": url})
 
-    cleaned_images = []
     for item in (images or []):
         if not isinstance(item, dict):
             continue
