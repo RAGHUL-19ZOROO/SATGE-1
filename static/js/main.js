@@ -483,7 +483,7 @@ function buildDynamicRow(className, firstClass, firstPlaceholder, secondClass, s
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.className = "secondary-btn action-remove-btn";
-    removeButton.innerText = "- Remove";
+    removeButton.innerText = "Remove";
     removeButton.addEventListener("click", () => row.remove());
 
     row.appendChild(first);
