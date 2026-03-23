@@ -15,10 +15,12 @@
             <a class="brand" href="/">{{ course.title }}</a>
             <nav class="topbar-links topbar-user">
                 <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
                 <a href="/">Home</a>
-                {% if current_user.role == "teacher" %}
+                {% if current_user.role == "staff" %}
                 <a href="/staff">Staff Upload</a>
                 {% endif %}
+                <a href="/dm">DM</a>
                 <a href="/logout">Logout</a>
             </nav>
         </header>
@@ -28,7 +30,7 @@
                 <div class="playlist-head">
                     <p class="eyebrow">{{ course.code }}</p>
                     <h2>{{ course.title }}</h2>
-                    <p class="panel-text">Select a topic from the course roadmap. The active topic loads its lesson video, AI notes, quiz, and doubt support.</p>
+                    <p class="panel-text">Select a topic from the course roadmap. The active topic loads its lesson video, text content, and notes.</p>
                 </div>
 
                 <div class="playlist-scroll">
@@ -64,29 +66,41 @@
                             <h1>{{ topic.title }}</h1>
                             <p class="panel-text">{{ topic.description }}</p>
                         </div>
-                        <div class="topic-pills">
-                            <span class="topic-pill">{{ topic.unit_title }}</span>
-                            <span class="topic-pill {% if topic.has_notes %}success{% endif %}">
-                                {% if topic.has_notes %}Notes Available{% else %}Notes Pending{% endif %}
-                            </span>
+                        <div class="topic-meta-right">
+                            <div class="content-mode-switch" aria-label="Content mode switch">
+                                <button class="topic-switch-pill is-active" type="button" id="watchVideoTopButton" {% if not topic.video_id %}disabled{% endif %}>Watch Video</button>
+                                <button class="topic-switch-pill" type="button" id="readNotesTopButton">Read Notes</button>
+                            </div>
+                            <div class="topic-pills">
+                                <span class="topic-pill">{{ topic.unit_title }}</span>
+                                <span class="topic-pill {% if topic.has_notes %}success{% endif %}">
+                                    {% if topic.has_notes %}Notes Available{% else %}Notes Pending{% endif %}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
                     {% if topic.video_id %}
                     <div class="player-frame">
                         <iframe
-                            src="https://www.youtube-nocookie.com/embed/{{ topic.video_id }}?rel=0&modestbranding=1"
+                            id="topicVideoFrame"
+                            src="https://www.youtube-nocookie.com/embed/{{ topic.video_id }}?controls=0&fs=0&disablekb=1&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&enablejsapi=1&origin={{ request.host_url.rstrip('/') }}"
                             title="{{ topic.title }}"
                             frameborder="0"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowfullscreen>
                         </iframe>
+                    </div>
+                    <div class="video-control-strip" aria-label="Video controls">
+                        <button id="videoPlayPauseButton" class="secondary-btn" type="button">Play</button>
+                        <button id="videoSoundButton" class="secondary-btn" type="button">Sound On</button>
                     </div>
                     {% else %}
                     <div class="player-frame no-video-frame">
                         <div class="no-video-card">
                             <p class="eyebrow">No Video</p>
                             <h2>Theory Topic</h2>
-                            <p class="panel-text">This topic was created without a YouTube lesson. Use the notes and AI study tabs for explanation, revision points, and MCQ practice.</p>
+                            <p class="panel-text">This topic was created without a YouTube lesson. Use text content and notes for learning and revision.</p>
                         </div>
                     </div>
                     {% endif %}
@@ -95,10 +109,8 @@
                 <section class="panel player-tabs-panel">
                     <nav class="player-tabs" aria-label="Lesson sections">
                         <button class="player-tab is-active" type="button" data-tab-target="overviewTab">Overview</button>
+                        <button class="player-tab" type="button" data-tab-target="textTab">Text Content</button>
                         <button class="player-tab" type="button" data-tab-target="notesTab">Notes</button>
-                        <button class="player-tab" type="button" data-tab-target="aiTab">AI Study</button>
-                        <button class="player-tab" type="button" data-tab-target="quizTab">MCQ Test</button>
-                        <button class="player-tab" type="button" data-tab-target="doubtTab">Doubt Agent</button>
                     </nav>
 
                     <div class="player-tab-panels">
@@ -110,16 +122,71 @@
                                     <ul class="bullet-list">
                                         <li>Unit: {{ topic.unit_title }}</li>
                                         <li>Course: {{ course.title }}</li>
-                                        <li>Mode: Video + AI + Notes + Quiz</li>
+                                        <li>Mode: Video + Text Content + Notes</li>
                                     </ul>
                                 </article>
                                 <article class="content-card">
                                     <h3>Quick Actions</h3>
                                     <div class="action-stack">
-                                        <button id="learnButton" class="primary-btn">Generate AI Notes</button>
+                                        <button class="primary-btn" type="button" onclick="document.querySelector('[data-tab-target=&quot;textTab&quot;]').click();">Open Text Content</button>
                                         <a id="downloadNotesButton" class="secondary-btn" href="/download/{{ topic.slug }}">Download Notes</a>
-                                        <span id="learnStatus" class="status-chip">Ready</span>
+                                        <span class="status-chip">Ready</span>
                                     </div>
+                                </article>
+                            </div>
+                        </section>
+
+                        <section id="textTab" class="player-tab-panel">
+                            <div class="lesson-grid">
+                                <article class="content-card">
+                                    <h3>Explanation</h3>
+                                    <p class="panel-text">{{ text_content.explanation or topic.description }}</p>
+                                </article>
+                                <article class="content-card">
+                                    <h3>Example</h3>
+                                    <p class="panel-text">{{ text_content.example or "No example added yet by staff." }}</p>
+                                </article>
+                                <article class="content-card lesson-grid-wide">
+                                    <h3>Analogy</h3>
+                                    <p class="panel-text">{{ text_content.analogy or "No analogy added yet by staff." }}</p>
+                                </article>
+                                {% if text_content.extra_fields %}
+                                <article class="content-card lesson-grid-wide">
+                                    <h3>Extra Fields</h3>
+                                    <ul class="bullet-list">
+                                        {% for item in text_content.extra_fields %}
+                                        <li><strong>{{ item.label }}:</strong> {{ item.value }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </article>
+                                {% endif %}
+                                {% if text_content.related_urls %}
+                                <article class="content-card lesson-grid-wide">
+                                    <h3>Related URLs</h3>
+                                    <div class="source-list">
+                                        {% for item in text_content.related_urls %}
+                                        <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title or item.url }}</a>
+                                        {% endfor %}
+                                    </div>
+                                </article>
+                                {% endif %}
+                                {% if text_content.images %}
+                                <article class="content-card lesson-grid-wide">
+                                    <h3>Images</h3>
+                                    <div class="image-grid">
+                                        {% for item in text_content.images %}
+                                        <a class="image-card" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
+                                            <img src="{{ item.url }}" alt="{{ item.title or 'Topic image' }}">
+                                            <span>{{ item.title or "Reference Image" }}</span>
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                </article>
+                                {% endif %}
+                                <article class="content-card lesson-grid-wide">
+                                    <h3>DA</h3>
+                                    <p class="panel-text">Need clarification? Open DA to message staff or students directly.</p>
+                                    <a class="primary-btn" href="/dm">Open DA (DM)</a>
                                 </article>
                             </div>
                         </section>
@@ -132,7 +199,7 @@
                                         {% if topic.has_notes %}
                                         Notes are available for this topic. Use the button below to download the uploaded notes file.
                                         {% else %}
-                                        No uploaded notes were found yet for this topic. Teachers can add notes from the staff page.
+                                        No uploaded notes were found yet for this topic. Staff can add notes from the staff page.
                                         {% endif %}
                                     </p>
                                     <div class="action-row">
@@ -163,93 +230,6 @@
                             </div>
                         </section>
 
-                        <section id="aiTab" class="player-tab-panel">
-                            <div class="lesson-grid">
-                                <article class="content-card">
-                                    <h3>Explanation</h3>
-                                    <div id="explanation" class="rich-output placeholder-copy">
-                                        Click <strong>Generate AI Notes</strong> from the Overview tab to create study notes.
-                                    </div>
-                                </article>
-                                <article class="content-card">
-                                    <h3>Key Points</h3>
-                                    <ul id="keyPoints" class="bullet-list">
-                                        <li>Important ideas will appear here.</li>
-                                    </ul>
-                                </article>
-                                <article class="content-card">
-                                    <h3>Examples</h3>
-                                    <ul id="examples" class="bullet-list">
-                                        <li>Short examples will appear here.</li>
-                                    </ul>
-                                </article>
-                                <article class="content-card">
-                                    <h3>Flowchart</h3>
-                                    <ul id="flowchart" class="flow-list">
-                                        <li>Step 1 -> Step 2 -> Step 3</li>
-                                    </ul>
-                                </article>
-                                <article class="content-card lesson-grid-wide">
-                                    <h3>Exam Notes</h3>
-                                    <ul id="examNotes" class="bullet-list">
-                                        <li>Exam-focused revision notes will appear here.</li>
-                                    </ul>
-                                </article>
-                            </div>
-                        </section>
-
-                        <section id="quizTab" class="player-tab-panel">
-                            <div class="panel-header">
-                                <div>
-                                    <p class="eyebrow">Assessment Agent</p>
-                                    <h2>MCQ Test</h2>
-                                </div>
-                                <span id="testStatus" class="status-chip">Waiting</span>
-                            </div>
-                            <form id="testForm" class="mcq-list">
-                                <div class="placeholder-copy">Generate AI notes first to load 3 to 5 MCQs.</div>
-                            </form>
-                            <div class="action-row">
-                                <button id="submitTestButton" class="primary-btn" type="button" disabled>Submit Test</button>
-                            </div>
-
-                            <div id="resultPanel" class="result-panel hidden">
-                                <div class="result-grid">
-                                    <article class="content-card">
-                                        <h3>Score</h3>
-                                        <p id="scoreText" class="score-text">0 / 0</p>
-                                    </article>
-                                    <article class="content-card">
-                                        <h3>Feedback</h3>
-                                        <p id="feedbackText" class="panel-text"></p>
-                                    </article>
-                                </div>
-                                <div class="action-row">
-                                    <span id="scoreBadge" class="score-badge">0%</span>
-                                </div>
-                                <div id="resultBreakdown" class="result-breakdown"></div>
-                            </div>
-                        </section>
-
-                        <section id="doubtTab" class="player-tab-panel">
-                            <div class="doubt-panel">
-                                <div class="panel-header">
-                                    <div>
-                                        <p class="eyebrow">Doubt Agent</p>
-                                        <h2>Ask your doubts</h2>
-                                    </div>
-                                    <span id="agentStatus" class="status-chip">Idle</span>
-                                </div>
-
-                                <div id="chatHistory" class="chat-history player-chat-history"></div>
-
-                                <div class="composer-card">
-                                    <label for="questionInput">Ask a topic-related question</label>
-                                    <textarea id="questionInput" rows="4" placeholder="Example: What is the role of system calls in an operating system?"></textarea>
-                                    <button id="askButton" class="primary-btn full-width">Ask Doubt Agent</button>
-                                </div>
-                            </div>
-                        </section>
                     </div>
                 </section>
             </main>

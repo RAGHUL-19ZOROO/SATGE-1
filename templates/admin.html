@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | {{ course.title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body data-page="admin">
+    <div class="page-shell">
+        <header class="topbar">
+            <a class="brand" href="/">{{ course.title }}</a>
+            <nav class="topbar-links topbar-user">
+                <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
+                <a href="/">Home</a>
+                <a href="/dm">DM</a>
+                <a href="/logout">Logout</a>
+            </nav>
+        </header>
+
+        <section class="panel teacher-hero">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Admin Control</p>
+                    <h1>Manage Semester, Courses, Staff, and Students</h1>
+                    <p class="panel-text">Use this panel to add broad academic structure and people records. Each section stores name and optional details.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-grid">
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Add Entry</p>
+                        <h2>Directory Manager</h2>
+                    </div>
+                </div>
+
+                <form id="adminDirectoryForm" class="upload-form">
+                    <label for="adminSection">Section</label>
+                    <select id="adminSection" name="section" required>
+                        <option value="">Choose section</option>
+                        <option value="semester">Semester</option>
+                        <option value="courses">Courses</option>
+                        <option value="staff">Staff</option>
+                        <option value="student">Student</option>
+                    </select>
+
+                    <label for="adminName">Name</label>
+                    <input id="adminName" name="name" type="text" placeholder="Example: Semester 3 / OS Faculty / Student Batch" required>
+
+                    <label for="adminDetails">Details (optional)</label>
+                    <textarea id="adminDetails" name="details" rows="4" placeholder="Department, section, contact, specialization, etc."></textarea>
+
+                    <button class="primary-btn" type="submit">Add Entry</button>
+                    <p id="adminDirectoryStatus" class="panel-text"></p>
+                </form>
+            </article>
+
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Semester</p>
+                        <h2>Configured Semesters</h2>
+                    </div>
+                </div>
+                <div class="admin-list">
+                    {% if directory.semester %}
+                        {% for item in directory.semester %}
+                        <article class="admin-list-item">
+                            <strong>{{ item.name }}</strong>
+                            <p class="panel-text">{{ item.details or "No details" }}</p>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <p class="panel-text">No semester entries yet.</p>
+                    {% endif %}
+                </div>
+            </article>
+
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Courses</p>
+                        <h2>Configured Courses</h2>
+                    </div>
+                </div>
+                <div class="admin-list">
+                    {% if directory.courses %}
+                        {% for item in directory.courses %}
+                        <article class="admin-list-item">
+                            <strong>{{ item.name }}</strong>
+                            <p class="panel-text">{{ item.details or "No details" }}</p>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <p class="panel-text">No course entries yet.</p>
+                    {% endif %}
+                </div>
+            </article>
+
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Staff</p>
+                        <h2>Configured Staff</h2>
+                    </div>
+                </div>
+                <div class="admin-list">
+                    {% if directory.staff %}
+                        {% for item in directory.staff %}
+                        <article class="admin-list-item">
+                            <strong>{{ item.name }}</strong>
+                            <p class="panel-text">{{ item.details or "No details" }}</p>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <p class="panel-text">No staff entries yet.</p>
+                    {% endif %}
+                </div>
+            </article>
+
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Student</p>
+                        <h2>Configured Students</h2>
+                    </div>
+                </div>
+                <div class="admin-list">
+                    {% if directory.student %}
+                        {% for item in directory.student %}
+                        <article class="admin-list-item">
+                            <strong>{{ item.name }}</strong>
+                            <p class="panel-text">{{ item.details or "No details" }}</p>
+                        </article>
+                        {% endfor %}
+                    {% else %}
+                        <p class="panel-text">No student entries yet.</p>
+                    {% endif %}
+                </div>
+            </article>
+        </section>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

@@ -7,7 +7,39 @@ from werkzeug.security import check_password_hash
 from utils.mysql_db import get_db_connection
 
 
+LOCKED_LOGIN_EMAIL = "thiru@gmail.com"
+LOCKED_LOGIN_PASSWORD = "1234"
+
+
+def _normalize_role(role):
+    cleaned = (role or "").strip().lower()
+    return "staff" if cleaned == "teacher" else cleaned
+
+
 def authenticate_user(email, password, role):
+    requested_role = _normalize_role(role)
+
+    # Temporary login lock: allow only one shared credential for both roles.
+    if (
+        (email or "").strip().lower() == LOCKED_LOGIN_EMAIL
+        and (password or "") == LOCKED_LOGIN_PASSWORD
+        and requested_role in {"staff", "student", "admin"}
+    ):
+        user_id_map = {
+            "staff": 1,
+            "student": 2,
+            "admin": 3,
+        }
+        return {
+            "id": user_id_map[requested_role],
+            "full_name": "Thiru",
+            "email": LOCKED_LOGIN_EMAIL,
+            "role": requested_role,
+            "is_active": True,
+        }
+
+    db_role = "teacher" if requested_role == "staff" else requested_role
+
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
@@ -18,7 +50,7 @@ def authenticate_user(email, password, role):
                 WHERE email = %s AND role = %s
                 LIMIT 1
                 """,
-                (email, role),
+                (email, db_role),
             )
             user = cursor.fetchone()
 
@@ -32,6 +64,7 @@ def authenticate_user(email, password, role):
                 "UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = %s",
                 (user["id"],),
             )
+            user["role"] = _normalize_role(user.get("role"))
             return user
     finally:
         connection.close()
@@ -91,8 +124,40 @@ def teacher_required(view):
         if not user:
             flash("Please log in to continue.", "warning")
             return redirect(url_for("login"))
-        if user.get("role") != "teacher":
-            flash("Teacher access is required for that page.", "warning")
+        if _normalize_role(user.get("role")) != "staff":
+            flash("Staff access is required for that page.", "warning")
+            return redirect(url_for("home"))
+        return view(*args, **kwargs)
+
+    return wrapped_view
+
+
+def admin_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        user = current_user()
+        if not user:
+            flash("Please log in to continue.", "warning")
+            return redirect(url_for("login"))
+        if user.get("role") != "admin":
+            flash("Admin access is required for that page.", "warning")
+            return redirect(url_for("home"))
+        return view(*args, **kwargs)
+
+    return wrapped_view
+
+
+def staff_or_admin_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        user = current_user()
+        if not user:
+            flash("Please log in to continue.", "warning")
+            return redirect(url_for("login"))
+
+        role = _normalize_role(user.get("role"))
+        if role not in {"staff", "admin"}:
+            flash("Staff or admin access is required for that page.", "warning")
             return redirect(url_for("home"))
         return view(*args, **kwargs)
 

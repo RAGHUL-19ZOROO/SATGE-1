@@ -1,6 +1,6 @@
 import json
-import re
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
 from flask import abort
 from werkzeug.utils import secure_filename
@@ -35,17 +35,34 @@ def _slugify(value):
 
 def extract_youtube_video_id(url):
     cleaned = (url or "").strip()
-    patterns = [
-        r"(?:youtube\.com/watch\?v=)([A-Za-z0-9_-]{11})",
-        r"(?:youtu\.be/)([A-Za-z0-9_-]{11})",
-        r"(?:youtube\.com/embed/)([A-Za-z0-9_-]{11})",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, cleaned)
-        if match:
-            return match.group(1)
-    if re.fullmatch(r"[A-Za-z0-9_-]{11}", cleaned):
+    if not cleaned:
+        raise ValueError("Enter a valid YouTube video link.")
+
+    # Allow directly entering a raw 11-char YouTube video id.
+    if len(cleaned) == 11 and all(ch.isalnum() or ch in "_-" for ch in cleaned):
         return cleaned
+
+    parsed = urlparse(cleaned)
+    host = (parsed.netloc or "").lower()
+    path_parts = [part for part in (parsed.path or "").split("/") if part]
+
+    candidates = []
+
+    if host in {"youtu.be", "www.youtu.be"} and path_parts:
+        candidates.append(path_parts[0])
+
+    if "youtube.com" in host or "youtube-nocookie.com" in host:
+        query_id = parse_qs(parsed.query).get("v", [""])[0]
+        if query_id:
+            candidates.append(query_id)
+
+        if path_parts and path_parts[0] in {"embed", "shorts", "live", "v"} and len(path_parts) > 1:
+            candidates.append(path_parts[1])
+
+    for candidate in candidates:
+        if len(candidate) == 11 and all(ch.isalnum() or ch in "_-" for ch in candidate):
+            return candidate
+
     raise ValueError("Enter a valid YouTube video link.")
 
 

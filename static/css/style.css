@@ -14,6 +14,22 @@
     --shadow: 0 24px 50px rgba(73, 125, 184, 0.14);
 }
 
+body.theme-dark {
+    --bg: #101620;
+    --bg-soft: #121a26;
+    --panel: rgba(24, 32, 46, 0.92);
+    --panel-strong: rgba(20, 29, 43, 0.96);
+    --line: rgba(143, 179, 223, 0.2);
+    --line-strong: rgba(118, 172, 237, 0.45);
+    --text: #e7f1ff;
+    --muted: #aac0dd;
+    --accent: #73bcff;
+    --accent-strong: #4ea3f8;
+    --accent-soft: rgba(115, 188, 255, 0.18);
+    --warm: #8dc6ff;
+    --shadow: 0 24px 50px rgba(5, 10, 18, 0.46);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -32,6 +48,14 @@ body {
         radial-gradient(circle at top left, rgba(88, 184, 255, 0.24), transparent 26%),
         radial-gradient(circle at top right, rgba(132, 204, 255, 0.22), transparent 22%),
         linear-gradient(180deg, #f8fcff 0%, #eef7ff 45%, #e6f2ff 100%);
+    transition: background 240ms ease, color 240ms ease;
+}
+
+body.theme-dark {
+    background:
+        radial-gradient(circle at top left, rgba(56, 123, 212, 0.24), transparent 26%),
+        radial-gradient(circle at top right, rgba(74, 142, 231, 0.2), transparent 22%),
+        linear-gradient(180deg, #0e141f 0%, #0f1622 45%, #0c111a 100%);
 }
 
 body::before {
@@ -264,6 +288,26 @@ select {
     font-weight: 600;
 }
 
+.theme-toggle {
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    padding: 9px 14px;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.82);
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 180ms ease, background 180ms ease, color 180ms ease;
+}
+
+body.theme-dark .theme-toggle {
+    background: rgba(18, 28, 41, 0.84);
+    color: var(--text);
+}
+
+.theme-toggle:hover {
+    transform: translateY(-1px);
+}
+
 .topbar-user {
     align-items: center;
 }
@@ -391,6 +435,22 @@ select {
     margin-bottom: 18px;
 }
 
+.topic-meta-right {
+    display: grid;
+    gap: 10px;
+    justify-items: end;
+}
+
+.content-mode-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.86);
+}
+
 .player-meta h1 {
     margin: 0;
     font-family: "Outfit", sans-serif;
@@ -417,6 +477,13 @@ select {
     inset: 0;
     width: 100%;
     height: 100%;
+}
+
+.video-control-strip {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .no-video-frame {
@@ -626,6 +693,11 @@ select {
     color: var(--text);
     border-color: var(--line-strong);
     background: rgba(88, 184, 255, 0.12);
+}
+
+.topic-switch-pill:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
 }
 
 .lesson-grid {
@@ -891,8 +963,112 @@ select {
     gap: 20px;
 }
 
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.admin-card {
+    align-self: start;
+}
+
+.admin-list {
+    display: grid;
+    gap: 12px;
+}
+
+.admin-list-item {
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.84);
+    padding: 14px;
+}
+
 .teacher-card {
     align-self: start;
+}
+
+.dynamic-block {
+    display: grid;
+    gap: 10px;
+}
+
+.dynamic-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.dynamic-list {
+    display: grid;
+    gap: 10px;
+}
+
+.dynamic-row {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr auto;
+    gap: 8px;
+}
+
+.dynamic-row button {
+    align-self: center;
+}
+
+.dynamic-row input {
+    width: 100%;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    padding: 10px 12px;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.96);
+}
+
+.dm-layout {
+    display: grid;
+    grid-template-columns: 320px minmax(0, 1fr);
+    gap: 20px;
+}
+
+.dm-contacts-panel,
+.dm-chat-panel {
+    align-self: start;
+}
+
+.dm-contacts-list {
+    display: grid;
+    gap: 10px;
+}
+
+.dm-contact-item {
+    text-align: left;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.84);
+    color: var(--text);
+    padding: 12px 14px;
+    cursor: pointer;
+    display: grid;
+    gap: 4px;
+}
+
+.dm-contact-item span {
+    color: var(--muted);
+    text-transform: capitalize;
+    font-size: 0.9rem;
+}
+
+.dm-contact-item.is-active {
+    border-color: var(--line-strong);
+    background: rgba(88, 184, 255, 0.14);
+}
+
+.dm-chat-history {
+    min-height: 380px;
+    max-height: 560px;
+    margin-bottom: 14px;
 }
 
 .upload-form textarea,
@@ -1017,6 +1193,136 @@ select {
     width: 100%;
 }
 
+body.theme-dark::before {
+    opacity: 0.3;
+}
+
+body.theme-dark .hero-banner {
+    background:
+        radial-gradient(circle at top right, rgba(94, 157, 240, 0.2), transparent 30%),
+        linear-gradient(145deg, rgba(27, 38, 56, 0.95), rgba(19, 28, 42, 0.95));
+}
+
+body.theme-dark .panel,
+body.theme-dark .glass-card,
+body.theme-dark .topic-card,
+body.theme-dark .content-card,
+body.theme-dark .mcq-card,
+body.theme-dark .composer-card,
+body.theme-dark .message-card,
+body.theme-dark .result-item,
+body.theme-dark .admin-list-item {
+    background: rgba(24, 34, 49, 0.9);
+}
+
+body.theme-dark .playlist-item,
+body.theme-dark .playlist-empty,
+body.theme-dark .topic-switch-pill,
+body.theme-dark .status-dot,
+body.theme-dark .status-chip,
+body.theme-dark .topic-pill,
+body.theme-dark .score-badge,
+body.theme-dark .user-chip,
+body.theme-dark .secondary-btn,
+body.theme-dark .content-mode-switch,
+body.theme-dark .source-list a,
+body.theme-dark .image-card {
+    background: rgba(19, 29, 43, 0.86);
+    color: var(--text);
+}
+
+body.theme-dark .playlist-item.is-playing,
+body.theme-dark .topic-switch-pill.is-active,
+body.theme-dark .player-tab.is-active,
+body.theme-dark .sidebar-topic-link.is-active,
+body.theme-dark .message-card.user {
+    background: rgba(77, 151, 240, 0.22);
+}
+
+body.theme-dark .player-frame,
+body.theme-dark .video-frame {
+    background: #121d2b;
+}
+
+body.theme-dark .no-video-frame {
+    background: linear-gradient(145deg, rgba(24, 34, 49, 0.94), rgba(17, 26, 40, 0.96));
+}
+
+body.theme-dark .video-panel,
+body.theme-dark .chat-panel {
+    background:
+        radial-gradient(circle at top right, rgba(100, 166, 244, 0.2), transparent 32%),
+        linear-gradient(145deg, rgba(26, 36, 52, 0.95), rgba(18, 27, 41, 0.95));
+}
+
+body.theme-dark .unit-block,
+body.theme-dark .sidebar-topic-link,
+body.theme-dark .option-pill,
+body.theme-dark .message-card.assistant,
+body.theme-dark .flash-message {
+    background: rgba(21, 31, 45, 0.9);
+}
+
+body.theme-dark .composer-card textarea,
+body.theme-dark .student-notes-editor textarea,
+body.theme-dark .upload-form input,
+body.theme-dark .upload-form select,
+body.theme-dark .upload-form textarea,
+body.theme-dark .login-form input,
+body.theme-dark .login-form select {
+    background: rgba(13, 22, 34, 0.92);
+    color: var(--text);
+    border-color: rgba(123, 174, 235, 0.35);
+}
+
+body.theme-dark .composer-card textarea::placeholder,
+body.theme-dark .student-notes-editor textarea::placeholder,
+body.theme-dark .upload-form input::placeholder,
+body.theme-dark .upload-form textarea::placeholder,
+body.theme-dark .login-form input::placeholder {
+    color: rgba(181, 202, 229, 0.85);
+}
+
+body.theme-dark .topbar-links a,
+body.theme-dark .playlist-unit-count,
+body.theme-dark .playlist-state,
+body.theme-dark .placeholder-copy,
+body.theme-dark .message-body,
+body.theme-dark .follow-up,
+body.theme-dark .panel-text,
+body.theme-dark .topic-card p,
+body.theme-dark .hero-text,
+body.theme-dark .result-item p {
+    color: var(--muted);
+}
+
+body.theme-dark .flash-message.warning {
+    color: #ffdca6;
+    background: rgba(92, 60, 18, 0.75);
+    border-color: rgba(215, 160, 71, 0.45);
+}
+
+body.theme-dark .flash-message.success {
+    color: #b9e8ff;
+    background: rgba(15, 72, 101, 0.75);
+    border-color: rgba(93, 180, 224, 0.42);
+}
+
+body.theme-dark .theme-toggle:hover,
+body.theme-dark .secondary-btn:hover,
+body.theme-dark .topic-switch-pill:hover,
+body.theme-dark .option-pill:hover {
+    background: rgba(28, 41, 59, 0.92);
+}
+
+body.theme-dark .dm-contact-item {
+    background: rgba(19, 29, 43, 0.88);
+}
+
+body.theme-dark .dm-contact-item.is-active {
+    background: rgba(77, 151, 240, 0.22);
+}
+
 @media (max-width: 1100px) {
     .hero-banner,
     .login-layout,
@@ -1025,7 +1331,9 @@ select {
     .notes-grid,
     .topic-layout,
     .lesson-grid,
-    .teacher-grid {
+    .teacher-grid,
+    .admin-grid,
+    .dm-layout {
         grid-template-columns: 1fr;
     }
 

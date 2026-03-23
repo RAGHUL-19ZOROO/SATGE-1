@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Messages | {{ course.title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body data-page="dm" data-user-id="{{ current_user.id }}">
+    <div class="page-shell">
+        <header class="topbar">
+            <a class="brand" href="/">{{ course.title }}</a>
+            <nav class="topbar-links topbar-user">
+                <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
+                <a href="/">Home</a>
+                <a href="/logout">Logout</a>
+            </nav>
+        </header>
+
+        <section class="panel teacher-hero">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Direct Message</p>
+                    <h1>Staff and Student Messaging</h1>
+                    <p class="panel-text">Use this space for quick communication, doubts, and updates between staff and students.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="dm-layout">
+            <aside class="panel dm-contacts-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Contacts</p>
+                        <h2>Available Chat Users</h2>
+                    </div>
+                    <span id="dmStatus" class="status-chip">Loading</span>
+                </div>
+                <div id="dmContacts" class="dm-contacts-list"></div>
+            </aside>
+
+            <main class="panel dm-chat-panel">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Conversation</p>
+                        <h2 id="dmChatTitle">Select a contact</h2>
+                    </div>
+                </div>
+
+                <div id="dmMessages" class="chat-history dm-chat-history"></div>
+
+                <div class="composer-card">
+                    <label for="dmInput">Type your message</label>
+                    <textarea id="dmInput" rows="4" placeholder="Write your message here..."></textarea>
+                    <button id="dmSendButton" class="primary-btn full-width" type="button" disabled>Send Message</button>
+                </div>
+            </main>
+        </section>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

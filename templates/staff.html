@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Panel | {{ course.title }}</title>
+    <title>Staff Panel | {{ course.title }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,7 +15,9 @@
             <a class="brand" href="/">{{ course.title }}</a>
             <nav class="topbar-links topbar-user">
                 <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
                 <a href="/">Home</a>
+                <a href="/dm">DM</a>
                 <a href="/logout">Logout</a>
             </nav>
         </header>
@@ -23,7 +25,7 @@
         <section class="panel teacher-hero">
             <div class="panel-header">
                 <div>
-                    <p class="eyebrow">Teacher Panel</p>
+                    <p class="eyebrow">Staff Panel</p>
                     <h1>Manage Units, Topics, Videos, and Notes</h1>
                     <p class="panel-text">Create a unit first, then create topics inside that unit with a regular YouTube link and topic notes. The backend automatically stores the topic and converts the video link into an embeddable YouTube video ID.</p>
                 </div>
@@ -34,45 +36,31 @@
             <article class="panel teacher-card">
                 <div class="panel-header">
                     <div>
-                        <p class="eyebrow">Create Unit</p>
-                        <h2>Add a new unit module</h2>
+                        <p class="eyebrow">Create Content</p>
+                        <h2>Create unit and topic in one place</h2>
                     </div>
                 </div>
 
-                <form id="unitForm" class="upload-form">
-                    <label for="unitTitle">Unit Title</label>
-                    <input id="unitTitle" name="title" type="text" placeholder="Example: Unit V - File Protection" required>
+                <form id="contentForm" class="upload-form" enctype="multipart/form-data">
+                    <label for="newUnitTitle">New Unit Title (optional)</label>
+                    <input id="newUnitTitle" name="new_unit_title" type="text" placeholder="Example: Unit V - File Protection">
 
-                    <button class="primary-btn" type="submit">Create Unit</button>
-                    <p id="unitStatus" class="panel-text"></p>
-                </form>
-            </article>
-
-            <article class="panel teacher-card">
-                <div class="panel-header">
-                    <div>
-                        <p class="eyebrow">Create Topic</p>
-                        <h2>Add a topic inside a unit</h2>
-                    </div>
-                </div>
-
-                <form id="topicForm" class="upload-form">
-                    <label for="topicUnit">Select Unit</label>
-                    <select id="topicUnit" name="unit_slug" required>
+                    <label for="topicUnit">Or Select Existing Unit</label>
+                    <select id="topicUnit" name="unit_slug">
                         <option value="">Choose a unit</option>
                         {% for unit in units %}
                         <option value="{{ unit.slug }}">{{ unit.title }}</option>
                         {% endfor %}
                     </select>
 
-                    <label for="topicTitle">Topic Title</label>
-                    <input id="topicTitle" name="title" type="text" placeholder="Example: Page Replacement Algorithms" required>
+                    <label for="topicTitle">Topic Title (optional)</label>
+                    <input id="topicTitle" name="title" type="text" placeholder="Example: Page Replacement Algorithms">
 
                     <label for="topicDescription">Topic Description</label>
                     <textarea id="topicDescription" name="description" rows="4" placeholder="Short topic summary for students"></textarea>
 
                     <label for="youtubeUrl">YouTube Video Link</label>
-                    <input id="youtubeUrl" name="youtube_url" type="url" placeholder="https://www.youtube.com/watch?v=..." required>
+                    <input id="youtubeUrl" name="youtube_url" type="url" placeholder="https://www.youtube.com/watch?v=...">
 
                     <label class="inline-check" for="noVideo">
                         <input id="noVideo" name="no_video" type="checkbox">
@@ -82,8 +70,8 @@
                     <label for="topicNotesFile">Topic Notes</label>
                     <input id="topicNotesFile" name="notes_file" type="file" accept=".txt,.pdf">
 
-                    <button class="primary-btn" type="submit">Create Topic</button>
-                    <p id="topicStatus" class="panel-text"></p>
+                    <button class="primary-btn" type="submit">Create Content</button>
+                    <p id="contentStatus" class="panel-text"></p>
                 </form>
             </article>
 
@@ -111,6 +99,74 @@
                     <p id="uploadStatus" class="panel-text"></p>
                 </form>
             </article>
+
+            <article class="panel teacher-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Text Content</p>
+                        <h2>Save explanation, example, and analogy</h2>
+                    </div>
+                </div>
+
+                <form id="textContentForm" class="upload-form">
+                    <label for="textTopicSlug">Select Topic</label>
+                    <select id="textTopicSlug" name="topic_slug" required>
+                        <option value="">Choose a topic</option>
+                        {% for topic in topics %}
+                        <option value="{{ topic.slug }}">{{ topic.unit_title }} - {{ topic.title }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="textExplanation">Explanation</label>
+                    <textarea id="textExplanation" name="explanation" rows="4" placeholder="Clear explanation for this topic"></textarea>
+
+                    <label for="textExample">Example</label>
+                    <textarea id="textExample" name="example" rows="4" placeholder="Simple practical example"></textarea>
+
+                    <label for="textAnalogy">Analogy</label>
+                    <textarea id="textAnalogy" name="analogy" rows="4" placeholder="Real-world analogy for quick understanding"></textarea>
+
+                    <div class="dynamic-block">
+                        <div class="dynamic-head">
+                            <label>Extra Fields</label>
+                            <button id="addExtraFieldButton" class="secondary-btn" type="button">Add Field</button>
+                        </div>
+                        <div id="extraFieldsContainer" class="dynamic-list"></div>
+                    </div>
+
+                    <div class="dynamic-block">
+                        <div class="dynamic-head">
+                            <label>Related URLs</label>
+                            <button id="addRelatedUrlButton" class="secondary-btn" type="button">Add URL</button>
+                        </div>
+                        <div id="relatedUrlsContainer" class="dynamic-list"></div>
+                    </div>
+
+                    <div class="dynamic-block">
+                        <div class="dynamic-head">
+                            <label>Image References</label>
+                            <button id="addImageRefButton" class="secondary-btn" type="button">Add Image URL</button>
+                        </div>
+                        <div id="imageRefsContainer" class="dynamic-list"></div>
+                    </div>
+
+                    <div class="dynamic-block">
+                        <div class="dynamic-head">
+                            <label>Upload Image</label>
+                        </div>
+                        <div class="dynamic-row upload-image-row">
+                            <input id="textImageTitle" type="text" placeholder="Image Title (optional)">
+                            <input id="textImageFile" type="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp">
+                            <button id="uploadTextImageButton" class="secondary-btn" type="button">Upload</button>
+                        </div>
+                        <p id="textImageUploadStatus" class="panel-text"></p>
+                    </div>
+
+                    <button class="primary-btn" type="submit">Save Text Content</button>
+                    <p id="textContentStatus" class="panel-text"></p>
+                </form>
+            </article>
+
         </section>
     </div>
 

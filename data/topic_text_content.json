@@ -1,0 +1,14 @@
+{
+  "what_is_operating_system": {
+    "explanation": "A",
+    "example": "B",
+    "analogy": "C",
+    "extra_fields": [
+      {
+        "label": "Diagram",
+        "value": "Diagram"
+      }
+    ],
+    "related_urls": []
+  }
+}

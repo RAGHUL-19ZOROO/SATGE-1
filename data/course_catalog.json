@@ -33,6 +33,15 @@
           "subject": "Operating Systems",
           "description": "A computer system is a combination of hardware and software components that work together to perform tasks efficiently. It consists of three main parts: hardware, system software (including the operating system), and application programs.\r\n\r\nThe hardware includes physical devices like the CPU, memory, storage, and input/output devices. The operating system acts as an interface between the user and the hardware, managing resources such as memory, processes, and devices. Application programs use these resources to perform specific tasks for users.\r\n\r\nOverall, a computer system enables users to execute programs, store data, and interact with technology in a structured and efficient manner.",
           "video_id": "qfUZBKDh9BY"
+        },
+        {
+          "slug": "mutex",
+          "title": "mutex",
+          "unit_slug": "unit_1",
+          "subject": "Operating Systems",
+          "description": "New topic added by teacher.",
+          "video_id": "",
+          "has_video": false
         }
       ]
     },
@@ -120,6 +129,21 @@
           "unit_slug": "unit_vi___system_calls",
           "subject": "Operating Systems",
           "description": "In this topic you will gain knowledge about what is system call .how system call works?",
+          "video_id": "",
+          "has_video": false
+        }
+      ]
+    },
+    {
+      "slug": "unit_7___outro",
+      "title": "Unit 7 - Outro",
+      "topics": [
+        {
+          "slug": "the_end",
+          "title": "The end",
+          "unit_slug": "unit_7___outro",
+          "subject": "Operating Systems",
+          "description": "New topic added by teacher.",
           "video_id": "",
           "has_video": false
         }

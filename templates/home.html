@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Learning System</title>
+    <title>Learning System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,9 +15,14 @@
             <a class="brand" href="/">{{ course.title }}</a>
             <nav class="topbar-links topbar-user">
                 <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
-                {% if current_user.role == "teacher" %}
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
+                {% if current_user.role == "staff" %}
                 <a href="/staff">Staff Upload</a>
                 {% endif %}
+                {% if current_user.role == "admin" %}
+                <a href="/admin">Admin Panel</a>
+                {% endif %}
+                <a href="/dm">DM</a>
                 <a href="/logout">Logout</a>
             </nav>
         </header>
@@ -35,8 +40,11 @@
                     {% else %}
                     <span class="secondary-btn">No Topics Yet</span>
                     {% endif %}
-                    {% if current_user.role == "teacher" %}
+                    {% if current_user.role == "staff" %}
                     <a class="secondary-btn" href="/staff">Staff Upload</a>
+                    {% endif %}
+                    {% if current_user.role == "admin" %}
+                    <a class="secondary-btn" href="/admin">Open Admin Panel</a>
                     {% endif %}
                 </div>
             </div>
@@ -46,8 +54,8 @@
                     <h2>{{ course.ltpc }}</h2>
                 </article>
                 <article class="glass-card">
-                    <span class="card-label">AI LMS</span>
-                    <h2>Video lessons, notes, AI explanation, doubts, and MCQ practice.</h2>
+                    <span class="card-label">LMS</span>
+                    <h2>Video lessons, text content, notes, and direct messaging support.</h2>
                 </article>
             </div>
         </header>
@@ -74,7 +82,7 @@
                     <span class="status-dot ready">{{ unit.topics|length }} Topics</span>
                 </div>
                 <h2>{{ unit.title }}</h2>
-                <p>Browse lesson videos, notes, AI explanations, doubts, and MCQs for all topics in this unit.</p>
+                <p>Browse lesson videos, text content, notes, and direct messaging support for all topics in this unit.</p>
                 {% if unit.topics %}
                 <a class="primary-btn full-width" href="/topic/{{ unit.topics[0].slug }}">Open Unit</a>
                 {% else %}
@@ -84,5 +92,7 @@
             {% endfor %}
         </main>
     </div>
+
+    <script src="/static/js/main.js"></script>
 </body>
 </html>

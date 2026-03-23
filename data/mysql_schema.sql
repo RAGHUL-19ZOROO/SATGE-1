@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(120) NOT NULL,
     email VARCHAR(160) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    role ENUM('teacher', 'student') NOT NULL,
+    role ENUM('teacher', 'student', 'admin') NOT NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_login_at TIMESTAMP NULL DEFAULT NULL
@@ -46,4 +46,5 @@ CREATE INDEX idx_users_active ON users(is_active);
 -- Example:
 -- INSERT INTO users (full_name, email, password_hash, role) VALUES
 -- ('OS Teacher', 'teacher@lms.com', 'paste_generated_hash_here', 'teacher'),
--- ('OS Student', 'student@lms.com', 'paste_generated_hash_here', 'student');
+-- ('OS Student', 'student@lms.com', 'paste_generated_hash_here', 'student'),
+-- ('System Admin', 'admin@lms.com', 'paste_generated_hash_here', 'admin');

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | AI Learning System</title>
+    <title>Login | Learning System</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,14 +11,21 @@
 </head>
 <body>
     <div class="page-shell login-shell">
+        <header class="topbar">
+            <span class="brand">Learning System</span>
+            <nav class="topbar-links topbar-user">
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
+            </nav>
+        </header>
+
         <section class="login-layout">
             <article class="hero-banner login-hero">
                 <div class="hero-copy">
                     <p class="eyebrow">PT LEE</p>
                     <h1>LEARNING MANAGEMENT SYSTEM</h1>
                     <p class="hero-text">
-                        Students can learn with videos, notes, AI explanations, doubts, and tests.
-                        Teachers can upload notes and manage the course content flow.
+                        Students can learn with videos, text content, notes, and direct messages.
+                        Staff can upload notes and manage the course content flow.
                     </p>
                 </div>
             </article>
@@ -45,7 +52,8 @@
                     <label for="role">Login As</label>
                     <select id="role" name="role" required>
                         <option value="student">Student</option>
-                        <option value="teacher">Teacher</option>
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
                     </select>
 
                     <label for="email">Email</label>
@@ -58,11 +66,13 @@
                 </form>
 
                 <div class="login-help">
-                    <p class="panel-text">Create your MySQL tables using <code>data/mysql_schema.sql</code> and insert users with hashed passwords.</p>
+                    <p class="panel-text">Admin can manage semester, course, staff, and student directory from the Admin Panel after login.</p>
                 </div>
             </section>
         </section>
     </div>
+
+    <script src="/static/js/main.js"></script>
 
 </body>
 </html>

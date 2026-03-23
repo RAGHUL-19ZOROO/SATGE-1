@@ -1,9 +1,9 @@
-from flask import Flask, flash, jsonify, redirect, render_template, request, send_file, session, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, send_file, url_for
 from pymysql import MySQLError
+from urllib.parse import urlparse
+from pathlib import Path
+import uuid
 
-from agents.assessment_agent import evaluate_answers
-from agents.doubt_agent import solve_doubt
-from agents.learning_agent import generate_learning_package
 from config import FLASK_SECRET_KEY, SSL_CERT_FILE, SSL_KEY_FILE
 from utils.auth import (
     authenticate_user,
@@ -12,8 +12,10 @@ from utils.auth import (
     login_user,
     logout_user,
     record_login_audit,
+    staff_or_admin_required,
     teacher_required,
 )
+from utils.direct_messages import get_thread, list_dm_contacts, send_message
 from utils.file_handler import (
     find_note_file,
     get_notes,
@@ -23,6 +25,8 @@ from utils.file_handler import (
 )
 from utils.mysql_db import get_db_connection
 from utils.student_notes import get_student_note, save_student_note
+from utils.admin_catalog import add_admin_entry, get_admin_directory
+from utils.topic_text_content import get_text_content, save_text_content
 from utils.topic_catalog import (
     create_topic,
     create_unit,
@@ -40,33 +44,6 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = bool(SSL_CERT_FILE and SSL_KEY_FILE)
 app.config["SESSION_REFRESH_EACH_REQUEST"] = False
-
-
-def _format_model_error(exc):
-    message = str(exc)
-    lowered = message.lower()
-
-    if "no endpoints available matching your guardrail restrictions and data policy" in lowered:
-        return (
-            "OpenRouter blocked the selected model because of your privacy settings. "
-            "Use a privacy-compatible model such as openai/gpt-4o-mini, or update "
-            "your OpenRouter privacy settings at https://openrouter.ai/settings/privacy.",
-            502,
-        )
-
-    if "quota" in lowered or "rate limit" in lowered or "429" in message:
-        return (
-            "The AI provider is rate-limited right now. Try again in a moment.",
-            429,
-        )
-
-    if "401" in message or "unauthorized" in lowered or "invalid" in lowered:
-        return (
-            "The API key was rejected. Check OPENROUTER_API_KEY in the .env file.",
-            401,
-        )
-
-    return message, 500
 
 
 @app.after_request
@@ -115,15 +92,20 @@ def inject_auth_state():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if current_user():
-        return redirect(url_for("staff_page" if current_user()["role"] == "teacher" else "home"))
+        role = current_user()["role"]
+        if role == "staff":
+            return redirect(url_for("staff_page"))
+        if role == "admin":
+            return redirect(url_for("admin_page"))
+        return redirect(url_for("home"))
 
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password") or ""
         role = (request.form.get("role") or "").strip().lower()
 
-        if role not in {"teacher", "student"}:
-            flash("Choose either Teacher or Student.", "warning")
+        if role not in {"staff", "student", "admin"}:
+            flash("Choose Student, Staff, or Admin.", "warning")
             return render_template("login.html")
 
         try:
@@ -143,7 +125,11 @@ def login():
             user_agent=request.headers.get("User-Agent"),
         )
         flash(f"Welcome back, {user['full_name']}.", "success")
-        return redirect(url_for("staff_page" if user["role"] == "teacher" else "home"))
+        if user["role"] == "staff":
+            return redirect(url_for("staff_page"))
+        if user["role"] == "admin":
+            return redirect(url_for("admin_page"))
+        return redirect(url_for("home"))
 
     return render_template("login.html")
 
@@ -183,6 +169,7 @@ def topic_page(topic_slug):
         "topic.html",
         course=get_course(),
         topic=topic,
+        text_content=get_text_content(topic_slug),
         units=list_units(),
         topics=list_topics(),
     )
@@ -194,66 +181,208 @@ def staff_page():
     return render_template("staff.html", course=get_course(), topics=list_topics(), units=list_units())
 
 
-@app.route("/learn", methods=["POST"])
-@login_required
-def learn():
+@app.route("/staff/text-content", methods=["POST"])
+@teacher_required
+def save_text_content_route():
     data = request.get_json(silent=True) or {}
-    topic_slug = (data.get("topic") or "").strip()
-
-    if not topic_slug:
-        return jsonify({"error": "Topic is required."}), 400
+    topic_slug = (data.get("topic_slug") or "").strip()
+    explanation = str(data.get("explanation") or "").strip()
+    example = str(data.get("example") or "").strip()
+    analogy = str(data.get("analogy") or "").strip()
+    extra_fields = data.get("extra_fields") or []
+    related_urls = data.get("related_urls") or []
+    images = data.get("images") or []
 
     topic = get_topic(topic_slug)
     if not topic:
-        return jsonify({"error": "Unknown topic."}), 404
+        return jsonify({"error": "Select a valid topic."}), 400
 
-    try:
-        notes = get_notes(topic_slug)
-        lesson_package = generate_learning_package(topic, notes)
-        session["assessment_bank"] = {
-            "topic": topic_slug,
-            "mcqs": lesson_package["mcqs"],
+    if not isinstance(extra_fields, list):
+        return jsonify({"error": "Extra fields must be a list."}), 400
+
+    if not isinstance(related_urls, list):
+        return jsonify({"error": "Related URLs must be a list."}), 400
+
+    if not isinstance(images, list):
+        return jsonify({"error": "Images must be a list."}), 400
+
+    cleaned_extra_fields = []
+    for item in extra_fields:
+        if not isinstance(item, dict):
+            continue
+        label = str(item.get("label") or "").strip()
+        value = str(item.get("value") or "").strip()
+        if not label and not value:
+            continue
+        if not label or not value:
+            return jsonify({"error": "Each extra field must include both label and value."}), 400
+        if len(label) > 120 or len(value) > 4000:
+            return jsonify({"error": "Extra field label/value is too long."}), 400
+        cleaned_extra_fields.append({"label": label, "value": value})
+
+    cleaned_related_urls = []
+    for item in related_urls:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "").strip()
+        url = str(item.get("url") or "").strip()
+        if not title and not url:
+            continue
+        if not url:
+            return jsonify({"error": "Each related URL entry must include a URL."}), 400
+
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            return jsonify({"error": f"Invalid URL: {url}"}), 400
+
+        if len(title) > 200 or len(url) > 2000:
+            return jsonify({"error": "Related URL title or URL is too long."}), 400
+
+        cleaned_related_urls.append({"title": title, "url": url})
+
+    cleaned_images = []
+    for item in images:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "").strip()
+        url = str(item.get("url") or "").strip()
+        if not title and not url:
+            continue
+        if not url:
+            return jsonify({"error": "Each image entry must include a URL."}), 400
+
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            return jsonify({"error": f"Invalid image URL: {url}"}), 400
+
+        if len(title) > 200 or len(url) > 2000:
+            return jsonify({"error": "Image title or URL is too long."}), 400
+
+        cleaned_images.append({"title": title, "url": url})
+
+    if not any([explanation, example, analogy, cleaned_extra_fields, cleaned_related_urls, cleaned_images]):
+        return jsonify({"error": "Provide at least one text field, extra field, related URL, or image."}), 400
+
+    for field_name, value in {
+        "Explanation": explanation,
+        "Example": example,
+        "Analogy": analogy,
+    }.items():
+        if len(value) > 12000:
+            return jsonify({"error": f"{field_name} is too long. Keep each field under 12,000 characters."}), 400
+
+    save_text_content(topic_slug, explanation, example, analogy, cleaned_extra_fields, cleaned_related_urls, cleaned_images)
+    return jsonify({"message": f"Text content saved for {topic['title']}."})
+
+
+@app.route("/staff/text-content/image", methods=["POST"])
+@teacher_required
+def upload_text_content_image():
+    image_file = request.files.get("image_file")
+    image_title = str(request.form.get("title") or "").strip()
+
+    if not image_file or not image_file.filename:
+        return jsonify({"error": "Select an image file to upload."}), 400
+
+    allowed_extensions = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
+    extension = Path(image_file.filename).suffix.lower()
+    if extension not in allowed_extensions:
+        return jsonify({"error": "Only PNG, JPG, JPEG, GIF, and WEBP are allowed."}), 400
+
+    upload_dir = Path("static/uploads/text_content")
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    unique_name = f"{uuid.uuid4().hex}{extension}"
+    save_path = upload_dir / unique_name
+    image_file.save(save_path)
+
+    url = f"/static/uploads/text_content/{unique_name}"
+    return jsonify(
+        {
+            "message": "Image uploaded successfully.",
+            "image": {
+                "title": image_title,
+                "url": url,
+            },
         }
-        public_mcqs = [
-            {
-                "id": item["id"],
-                "question": item["question"],
-                "options": item["options"],
-            }
-            for item in lesson_package["mcqs"]
-        ]
-        response_payload = lesson_package.copy()
-        response_payload["mcqs"] = public_mcqs
-        return jsonify(response_payload)
-    except Exception as exc:
-        message, status_code = _format_model_error(exc)
-        return jsonify({"error": message}), status_code
+    )
 
 
-@app.route("/doubt", methods=["POST"])
-@login_required
-def doubt():
+@app.route("/admin")
+@staff_or_admin_required
+def admin_page():
+    return render_template("admin.html", directory=get_admin_directory(), course=get_course())
+
+
+@app.route("/admin/directory", methods=["POST"])
+@staff_or_admin_required
+def add_admin_directory_entry():
     data = request.get_json(silent=True) or {}
-    topic_slug = (data.get("topic") or "").strip()
-    question = (data.get("question") or "").strip()
+    section = (data.get("section") or "").strip()
+    name = (data.get("name") or "").strip()
+    details = str(data.get("details") or "").strip()
 
-    if not topic_slug:
-        return jsonify({"error": "Topic is required."}), 400
-
-    if not question:
-        return jsonify({"error": "Question is required."}), 400
-
-    topic = get_topic(topic_slug)
-    if not topic:
-        return jsonify({"error": "Unknown topic."}), 404
+    if len(details) > 2000:
+        return jsonify({"error": "Details are too long. Keep details under 2,000 characters."}), 400
 
     try:
-        notes = get_notes(topic_slug)
-        answer = solve_doubt(question, topic, notes)
-        return jsonify(answer)
-    except Exception as exc:
-        message, status_code = _format_model_error(exc)
-        return jsonify({"error": message}), status_code
+        payload = add_admin_entry(section, name, details)
+        return jsonify(
+            {
+                "message": f"{payload['entry']['name']} added under {payload['section']}.",
+                "entry": payload["entry"],
+                "section": payload["section"],
+            }
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+
+@app.route("/dm")
+@login_required
+def dm_page():
+    return render_template("dm.html", course=get_course())
+
+
+@app.route("/dm/contacts", methods=["GET"])
+@login_required
+def dm_contacts():
+    contacts = list_dm_contacts(current_user())
+    return jsonify({"contacts": contacts})
+
+
+@app.route("/dm/thread/<int:contact_id>", methods=["GET"])
+@login_required
+def dm_thread(contact_id):
+    contacts = list_dm_contacts(current_user())
+    contact = next((item for item in contacts if int(item["id"]) == int(contact_id)), None)
+    if not contact:
+        return jsonify({"error": "Select a valid contact."}), 404
+
+    return jsonify(
+        {
+            "contact": contact,
+            "messages": get_thread(current_user(), contact_id),
+        }
+    )
+
+
+@app.route("/dm/thread/<int:contact_id>", methods=["POST"])
+@login_required
+def dm_send(contact_id):
+    data = request.get_json(silent=True) or {}
+    message = str(data.get("message") or "").strip()
+
+    contacts = list_dm_contacts(current_user())
+    contact = next((item for item in contacts if int(item["id"]) == int(contact_id)), None)
+    if not contact:
+        return jsonify({"error": "Select a valid contact."}), 404
+
+    try:
+        payload = send_message(current_user(), contact, message)
+        return jsonify({"message": "Message sent.", "item": payload})
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
 
 @app.route("/student-notes/<topic_slug>", methods=["GET"])
@@ -299,28 +428,6 @@ def save_student_notes_route(topic_slug):
             "updated_at": (note or {}).get("updated_at").isoformat() if (note or {}).get("updated_at") else None,
         }
     )
-
-
-@app.route("/test", methods=["POST"])
-@login_required
-def test():
-    data = request.get_json(silent=True) or {}
-    topic_slug = (data.get("topic") or "").strip()
-    answers = data.get("answers") or {}
-
-    if not topic_slug:
-        return jsonify({"error": "Topic is required."}), 400
-
-    bank = session.get("assessment_bank") or {}
-    if bank.get("topic") != topic_slug or not bank.get("mcqs"):
-        return jsonify({"error": "Load the lesson before submitting the test."}), 400
-
-    try:
-        result = evaluate_answers(bank["mcqs"], answers)
-        return jsonify(result)
-    except Exception as exc:
-        message, status_code = _format_model_error(exc)
-        return jsonify({"error": message}), status_code
 
 
 @app.route("/upload", methods=["POST"])

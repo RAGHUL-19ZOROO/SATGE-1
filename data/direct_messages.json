@@ -1,0 +1,22 @@
+[
+  {
+    "sender_id": 1,
+    "sender_name": "Thiru",
+    "sender_role": "staff",
+    "receiver_id": 2,
+    "receiver_name": "Student",
+    "receiver_role": "student",
+    "message": "Hello",
+    "created_at": "2026-03-23T08:24:13.306346Z"
+  },
+  {
+    "sender_id": 2,
+    "sender_name": "Thiru",
+    "sender_role": "student",
+    "receiver_id": 1,
+    "receiver_name": "Thiru",
+    "receiver_role": "staff",
+    "message": "Hi da",
+    "created_at": "2026-03-23T08:25:04.002688Z"
+  }
+]
