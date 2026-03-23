@@ -42,6 +42,7 @@ body {
     position: relative;
     margin: 0;
     min-height: 100vh;
+    overflow-x: hidden;
     font-family: "Plus Jakarta Sans", sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
@@ -76,6 +77,11 @@ body::before {
 a {
     color: inherit;
     text-decoration: none;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
 }
 
 button,
@@ -200,9 +206,28 @@ select:focus-visible,
     flex-wrap: wrap;
 }
 
+.panel-header {
+    align-items: flex-start;
+}
+
+.panel-header > div {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.panel-text {
+    margin: 0;
+}
+
 .primary-btn,
 .secondary-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 999px;
+    min-height: 44px;
+    line-height: 1.2;
     padding: 13px 22px;
     font-weight: 800;
     transition: transform 180ms ease, opacity 180ms ease, box-shadow 180ms ease;
@@ -297,6 +322,7 @@ select:focus-visible,
 
 .topbar {
     margin-bottom: 20px;
+    row-gap: 8px;
 }
 
 .topbar-links {
@@ -320,6 +346,12 @@ select:focus-visible,
     color: var(--muted);
     font-weight: 600;
     transition: background 180ms ease, color 180ms ease;
+}
+
+.topbar-links a,
+.theme-toggle,
+.user-chip {
+    min-height: 40px;
 }
 
 .topbar-links a:hover {
@@ -458,6 +490,17 @@ body.theme-dark .theme-toggle {
 .playlist-item.is-playing {
     border-color: var(--line-strong);
     background: rgba(88, 184, 255, 0.14);
+}
+
+.playlist-item.is-locked {
+    border-color: rgba(210, 142, 34, 0.32);
+    background: rgba(255, 230, 182, 0.46);
+    cursor: not-allowed;
+}
+
+body.theme-dark .playlist-item.is-locked {
+    border-color: rgba(225, 174, 92, 0.4);
+    background: rgba(106, 78, 30, 0.38);
 }
 
 .player-stage {
@@ -756,6 +799,8 @@ body.theme-dark .theme-toggle {
 .mcq-card,
 .composer-card {
     border: 1px solid var(--line);
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 420px;
 }
 
 .content-card h3,
@@ -988,10 +1033,34 @@ body.theme-dark .theme-toggle {
 
 .upload-form {
     margin-top: 18px;
+    align-items: stretch;
+}
+
+.upload-form .primary-btn,
+.upload-form .secondary-btn {
+    width: 100%;
 }
 
 .upload-form label {
+    display: block;
     font-weight: 700;
+}
+
+.upload-form input,
+.upload-form select,
+.login-form input,
+.login-form select,
+.composer-card textarea,
+.student-notes-editor textarea {
+    min-height: 44px;
+}
+
+.upload-form textarea,
+.composer-card textarea,
+.student-notes-editor textarea,
+.login-form input,
+.upload-form input {
+    line-height: 1.45;
 }
 
 .inline-check {
@@ -1014,12 +1083,14 @@ body.theme-dark .theme-toggle {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
+    align-items: stretch;
 }
 
 .admin-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 20px;
+    align-items: stretch;
 }
 
 .admin-card {
@@ -1039,7 +1110,10 @@ body.theme-dark .theme-toggle {
 }
 
 .teacher-card {
-    align-self: start;
+    align-self: stretch;
+    display: grid;
+    align-content: start;
+    gap: 10px;
 }
 
 .dynamic-block {
@@ -1063,11 +1137,12 @@ body.theme-dark .theme-toggle {
 .dynamic-row {
     display: grid;
     grid-template-columns: 1fr 1.4fr auto;
+    align-items: stretch;
     gap: 8px;
 }
 
 .dynamic-row button {
-    align-self: center;
+    align-self: stretch;
 }
 
 .dynamic-row input {
@@ -1252,6 +1327,10 @@ body.theme-dark .theme-toggle {
     margin-top: 18px;
 }
 
+.page-flash-stack {
+    margin-bottom: 18px;
+}
+
 .flash-message {
     padding: 12px 14px;
     border-radius: 16px;
@@ -1269,6 +1348,12 @@ body.theme-dark .theme-toggle {
 .flash-message.success {
     color: #0c6b99;
     background: #eaf7ff;
+}
+
+.flash-message.error {
+    color: #8f1d1d;
+    background: #ffecec;
+    border-color: rgba(184, 64, 64, 0.28);
 }
 
 .login-help {
@@ -1399,6 +1484,12 @@ body.theme-dark .flash-message.success {
     border-color: rgba(93, 180, 224, 0.42);
 }
 
+body.theme-dark .flash-message.error {
+    color: #ffd7d7;
+    background: rgba(118, 36, 36, 0.78);
+    border-color: rgba(224, 113, 113, 0.45);
+}
+
 body.theme-dark .theme-toggle:hover,
 body.theme-dark .secondary-btn:hover,
 body.theme-dark .topic-switch-pill:hover,
@@ -1456,6 +1547,14 @@ body.theme-dark .dm-contact-item.is-active {
     }
 }
 
+@media (max-width: 900px) {
+    .hero-banner,
+    .panel {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
 @media (max-width: 720px) {
     .page-shell {
         width: min(100% - 22px, 1380px);
@@ -1475,6 +1574,10 @@ body.theme-dark .dm-contact-item.is-active {
     .topbar-user {
         width: 100%;
         justify-content: flex-start;
+    }
+
+    .topbar-links {
+        width: 100%;
     }
 
     .content-mode-switch {

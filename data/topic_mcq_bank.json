@@ -1,0 +1,74 @@
+{
+  "what_is_operating_system": [
+    {
+      "question": "What is the main purpose of an Operating System?",
+      "options": [
+        "To provide a database for user files",
+        "To manage computer hardware and software resources",
+        "To allow the user to write high-level code",
+        "To design the physical circuits of the CPU"
+      ],
+      "answer_index": 1
+    },
+    {
+      "question": "Which component of the OS is considered the core and remains in memory at all times?",
+      "options": [
+        "Shell",
+        "Application Program",
+        "Kernel",
+        "Compiler"
+      ],
+      "answer_index": 2
+    },
+    {
+      "question": "What is a 'System Call' in an Operating System?",
+      "options": [
+        "The programmatic way in which a computer program requests a service from the kernel",
+        "A call made by the hardware to the user",
+        "A way to reboot the operating system",
+        "An error message displayed on the screen"
+      ],
+      "answer_index": 0
+    },
+    {
+      "question": "Which type of OS is designed to respond to events within a very strict and specific time constraint?",
+      "options": [
+        "Batch Processing System",
+        "Time-sharing System",
+        "Real-time System",
+        "Network Operating System"
+      ],
+      "answer_index": 2
+    },
+    {
+      "question": "In an OS, what is the role of the 'Shell'?",
+      "options": [
+        "It manages the physical memory",
+        "It acts as an interface between the user and the kernel",
+        "It is the physical casing of the computer",
+        "It is a type of permanent storage"
+      ],
+      "answer_index": 1
+    },
+    {
+      "question": "Which of the following is NOT a primary function of an Operating System?",
+      "options": [
+        "Memory Management",
+        "Process Scheduling",
+        "Compiling Java source code",
+        "File System Management"
+      ],
+      "answer_index": 2
+    },
+    {
+      "question": "Which OS architecture allows multiple users to share the same computer resources simultaneously by switching between them rapidly?",
+      "options": [
+        "Single-user System",
+        "Time-sharing System",
+        "Batch System",
+        "Distributed System"
+      ],
+      "answer_index": 1
+    }
+  ]
+}

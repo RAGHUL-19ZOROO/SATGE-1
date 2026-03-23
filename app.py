@@ -2,19 +2,22 @@ from flask import Flask, flash, jsonify, redirect, render_template, request, sen
 from pymysql import MySQLError
 from urllib.parse import urlparse
 from pathlib import Path
+import json
 import uuid
+from werkzeug.security import generate_password_hash
 
 from config import FLASK_SECRET_KEY, SSL_CERT_FILE, SSL_KEY_FILE
 from utils.auth import (
+    admin_required,
     authenticate_user,
     current_user,
     login_required,
     login_user,
     logout_user,
     record_login_audit,
-    staff_or_admin_required,
     teacher_required,
 )
+from utils.anna_curriculum import add_department, add_subject, get_curriculum
 from utils.direct_messages import get_thread, list_dm_contacts, send_message
 from utils.file_handler import (
     find_note_file,
@@ -27,6 +30,14 @@ from utils.mysql_db import get_db_connection
 from utils.student_notes import get_student_note, save_student_note
 from utils.admin_catalog import add_admin_entry, get_admin_directory
 from utils.notes_images import add_notes_image, get_notes_images
+from utils.topic_mcq import (
+    get_topic_access_map,
+    get_topic_mcqs_for_student,
+    get_topic_result,
+    grade_mcq_attempt,
+    save_attempt_result,
+    save_topic_mcqs,
+)
 from utils.topic_text_content import get_text_content, save_text_content
 from utils.topic_catalog import (
     create_topic,
@@ -45,6 +56,15 @@ app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["SESSION_COOKIE_SECURE"] = bool(SSL_CERT_FILE and SSL_KEY_FILE)
 app.config["SESSION_REFRESH_EACH_REQUEST"] = False
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 604800
+APP_NAME = "Learning Paradiso"
+
+
+def asset_version(relative_path):
+    try:
+        return int((Path("static") / relative_path).stat().st_mtime)
+    except OSError:
+        return 1
 
 
 @app.after_request
@@ -65,6 +85,11 @@ def add_security_headers(response):
         "base-uri 'self'; "
         "form-action 'self';"
     )
+
+    # Cache static assets aggressively to reduce repeat page-load time.
+    if request.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=604800, immutable"
+
     return response
 
 
@@ -87,7 +112,43 @@ def get_database_status():
 
 @app.context_processor
 def inject_auth_state():
-    return {"current_user": current_user()}
+    return {
+        "app_name": APP_NAME,
+        "current_user": current_user(),
+        "asset_version": asset_version,
+    }
+
+
+def list_admin_users():
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, full_name, email, role, is_active, created_at
+                FROM users
+                ORDER BY created_at DESC
+                LIMIT 200
+                """
+            )
+            rows = cursor.fetchall() or []
+    finally:
+        connection.close()
+
+    users = []
+    for item in rows:
+        role = str(item.get("role") or "").strip().lower()
+        users.append(
+            {
+                "id": item.get("id"),
+                "full_name": item.get("full_name"),
+                "email": item.get("email"),
+                "role": "staff" if role == "teacher" else role,
+                "is_active": bool(item.get("is_active")),
+                "created_at": item.get("created_at").isoformat() if item.get("created_at") else None,
+            }
+        )
+    return users
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -153,11 +214,17 @@ def db_check():
 @app.route("/")
 @login_required
 def home():
+    user = current_user()
+    topic_access = {}
+    if user and user.get("role") == "student":
+        topic_access = get_topic_access_map(user["id"])
+
     return render_template(
         "home.html",
         course=get_course(),
         units=list_units(),
         default_topic=get_default_topic(),
+        topic_access=topic_access,
     )
 
 
@@ -165,13 +232,28 @@ def home():
 @login_required
 def topic_page(topic_slug):
     topic = get_topic_or_404(topic_slug)
+    user = current_user()
+    topic_access = {}
+    if user and user.get("role") == "student":
+        topic_access = get_topic_access_map(user["id"])
+        is_unlocked = topic_access.get(topic_slug, False)
+        if not is_unlocked:
+            flash("This topic is locked. Score above 80% in the previous topic MCQ to unlock it.", "warning")
+            return redirect(url_for("home"))
+
     topic["has_notes"] = bool(get_notes(topic_slug))
+    mcq_questions = get_topic_mcqs_for_student(topic_slug)
+    topic_result = get_topic_result(user["id"], topic_slug) if user else {}
+
     return render_template(
         "topic.html",
         course=get_course(),
         topic=topic,
         text_content=get_text_content(topic_slug),
         notes_images=get_notes_images(topic_slug),
+        mcq_questions=mcq_questions,
+        mcq_result=topic_result,
+        topic_access=topic_access,
         units=list_units(),
         topics=list_topics(),
     )
@@ -180,7 +262,25 @@ def topic_page(topic_slug):
 @app.route("/staff")
 @teacher_required
 def staff_page():
-    return render_template("staff.html", course=get_course(), topics=list_topics(), units=list_units())
+    return render_template("staff.html", course=get_course())
+
+
+@app.route("/staff/create-content")
+@teacher_required
+def staff_create_content_page():
+    return render_template("staff_create_content.html", course=get_course(), topics=list_topics(), units=list_units())
+
+
+@app.route("/staff/text-content/new")
+@teacher_required
+def staff_new_text_content_page():
+    return render_template("staff_text_content_new.html", course=get_course(), topics=list_topics())
+
+
+@app.route("/staff/text-content/update")
+@teacher_required
+def staff_update_text_content_page():
+    return render_template("staff_text_content_update.html", course=get_course(), topics=list_topics())
 
 
 @app.route("/staff/text-content", methods=["POST"])
@@ -277,6 +377,24 @@ def save_text_content_route():
     return jsonify({"message": f"Text content saved for {topic['title']}."})
 
 
+@app.route("/staff/text-content/<topic_slug>", methods=["GET"])
+@teacher_required
+def get_text_content_route(topic_slug):
+    topic = get_topic(topic_slug)
+    if not topic:
+        return jsonify({"error": "Select a valid topic."}), 404
+
+    return jsonify(
+        {
+            "topic": {
+                "slug": topic["slug"],
+                "title": topic["title"],
+            },
+            "text_content": get_text_content(topic_slug),
+        }
+    )
+
+
 @app.route("/staff/text-content/image", methods=["POST"])
 @teacher_required
 def upload_text_content_image():
@@ -311,13 +429,27 @@ def upload_text_content_image():
 
 
 @app.route("/admin")
-@staff_or_admin_required
+@admin_required
 def admin_page():
-    return render_template("admin.html", directory=get_admin_directory(), course=get_course())
+    users = []
+    user_error = ""
+    try:
+        users = list_admin_users()
+    except MySQLError:
+        user_error = "Unable to load user list from database."
+
+    return render_template(
+        "admin.html",
+        directory=get_admin_directory(),
+        curriculum=get_curriculum(),
+        admin_users=users,
+        admin_users_error=user_error,
+        course=get_course(),
+    )
 
 
 @app.route("/admin/directory", methods=["POST"])
-@staff_or_admin_required
+@admin_required
 def add_admin_directory_entry():
     data = request.get_json(silent=True) or {}
     section = (data.get("section") or "").strip()
@@ -338,6 +470,80 @@ def add_admin_directory_entry():
         )
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
+
+
+@app.route("/admin/curriculum/department", methods=["POST"])
+@admin_required
+def add_curriculum_department():
+    data = request.get_json(silent=True) or {}
+    code = (data.get("code") or "").strip()
+    name = (data.get("name") or "").strip()
+
+    try:
+        entry = add_department(code, name)
+        return jsonify({"message": f"Department {entry['code']} created.", "department": entry})
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+
+@app.route("/admin/curriculum/subject", methods=["POST"])
+@admin_required
+def add_curriculum_subject():
+    data = request.get_json(silent=True) or {}
+    department_slug = (data.get("department_slug") or "").strip()
+    subject_code = (data.get("subject_code") or "").strip()
+    title = (data.get("title") or "").strip()
+    semester = (data.get("semester") or "").strip()
+
+    try:
+        entry = add_subject(department_slug, subject_code, title, semester)
+        return jsonify({"message": f"Subject {entry['subject_code']} added.", "subject": entry})
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+
+@app.route("/admin/users", methods=["POST"])
+@admin_required
+def create_user_account():
+    data = request.get_json(silent=True) or {}
+    full_name = (data.get("full_name") or "").strip()
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    role = (data.get("role") or "").strip().lower()
+
+    if not full_name:
+        return jsonify({"error": "Full name is required."}), 400
+    if not email:
+        return jsonify({"error": "Email is required."}), 400
+    if "@" not in email:
+        return jsonify({"error": "Enter a valid email."}), 400
+    if len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters."}), 400
+    if role not in {"staff", "student"}:
+        return jsonify({"error": "Role must be staff or student."}), 400
+
+    db_role = "teacher" if role == "staff" else role
+    password_hash = generate_password_hash(password)
+
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO users (full_name, email, password_hash, role, is_active)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (full_name, email, password_hash, db_role, 1),
+            )
+    except MySQLError as exc:
+        message = str(exc)
+        if "Duplicate" in message or "duplicate" in message:
+            return jsonify({"error": "Email already exists."}), 400
+        return jsonify({"error": "Unable to create user account."}), 500
+    finally:
+        connection.close()
+
+    return jsonify({"message": f"{role.title()} account created for {full_name}."})
 
 
 @app.route("/dm")
@@ -495,6 +701,102 @@ def upload_notes_image():
             "message": "Notes image uploaded successfully.",
             "image": entry,
             "topic": topic_slug,
+        }
+    )
+
+
+@app.route("/staff/mcq-upload", methods=["POST"])
+@teacher_required
+def upload_topic_mcq():
+    topic_slug = (request.form.get("topic_slug") or "").strip()
+    mcq_file = request.files.get("mcq_file")
+
+    if not topic_slug:
+        return jsonify({"error": "Select a topic."}), 400
+
+    topic = get_topic(topic_slug)
+    if not topic:
+        return jsonify({"error": "Select a valid topic."}), 400
+
+    if not mcq_file or not mcq_file.filename:
+        return jsonify({"error": "Upload a JSON file."}), 400
+
+    extension = Path(mcq_file.filename).suffix.lower()
+    if extension != ".json":
+        return jsonify({"error": "Only JSON files are supported for MCQ upload."}), 400
+
+    try:
+        payload = json.load(mcq_file.stream)
+    except Exception:
+        return jsonify({"error": "Invalid JSON file."}), 400
+
+    try:
+        questions = save_topic_mcqs(topic_slug, payload)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    return jsonify(
+        {
+            "message": f"MCQ uploaded for {topic['title']}.",
+            "topic": topic_slug,
+            "total_questions": len(questions),
+        }
+    )
+
+
+@app.route("/topic/<topic_slug>/mcq", methods=["GET"])
+@login_required
+def topic_mcq(topic_slug):
+    topic = get_topic(topic_slug)
+    if not topic:
+        return jsonify({"error": "Unknown topic."}), 404
+
+    user = current_user()
+    if user.get("role") == "student":
+        topic_access = get_topic_access_map(user["id"])
+        if not topic_access.get(topic_slug, False):
+            return jsonify({"error": "Topic is locked. Pass previous topic MCQ with more than 80% to unlock."}), 403
+
+    return jsonify(
+        {
+            "topic": topic_slug,
+            "questions": get_topic_mcqs_for_student(topic_slug),
+            "result": get_topic_result(user["id"], topic_slug),
+        }
+    )
+
+
+@app.route("/topic/<topic_slug>/mcq-attempt", methods=["POST"])
+@login_required
+def topic_mcq_attempt(topic_slug):
+    topic = get_topic(topic_slug)
+    if not topic:
+        return jsonify({"error": "Unknown topic."}), 404
+
+    user = current_user()
+    if user.get("role") != "student":
+        return jsonify({"error": "Only students can submit MCQ attempts."}), 403
+
+    topic_access = get_topic_access_map(user["id"])
+    if not topic_access.get(topic_slug, False):
+        return jsonify({"error": "Topic is locked. Pass previous topic MCQ with more than 80% to unlock."}), 403
+
+    data = request.get_json(silent=True) or {}
+    answers = data.get("answers") or []
+
+    try:
+        result = grade_mcq_attempt(topic_slug, answers)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    saved = save_attempt_result(user["id"], topic_slug, result)
+    return jsonify(
+        {
+            "message": "MCQ submitted.",
+            "result": {
+                **result,
+                "best_score": saved["best_score"],
+            },
         }
     )
 

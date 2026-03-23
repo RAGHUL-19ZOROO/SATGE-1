@@ -7,16 +7,34 @@ from werkzeug.utils import secure_filename
 
 
 COURSE_CATALOG_PATH = Path("data/course_catalog.json")
+_COURSE_CACHE = {
+    "mtime": None,
+    "payload": None,
+}
 
 
 def _load_course_catalog():
+    mtime = COURSE_CATALOG_PATH.stat().st_mtime if COURSE_CATALOG_PATH.exists() else None
+    if _COURSE_CACHE["payload"] is not None and _COURSE_CACHE["mtime"] == mtime:
+        return _COURSE_CACHE["payload"]
+
     with COURSE_CATALOG_PATH.open("r", encoding="utf-8") as file:
-        return json.load(file)
+        payload = json.load(file)
+
+    if not isinstance(payload, dict):
+        payload = {"units": []}
+
+    _COURSE_CACHE["mtime"] = mtime
+    _COURSE_CACHE["payload"] = payload
+    return payload
 
 
 def _save_course_catalog(course_catalog):
     with COURSE_CATALOG_PATH.open("w", encoding="utf-8") as file:
         json.dump(course_catalog, file, indent=2)
+
+    _COURSE_CACHE["mtime"] = COURSE_CATALOG_PATH.stat().st_mtime
+    _COURSE_CACHE["payload"] = course_catalog
 
 
 def _build_topic_index(course_catalog):

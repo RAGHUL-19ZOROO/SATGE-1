@@ -3,17 +3,30 @@ from pathlib import Path
 
 
 DATA_PATH = Path("data/topic_text_content.json")
+_TEXT_CONTENT_CACHE = {
+    "mtime": None,
+    "payload": None,
+}
 
 
 def _load_all():
     if not DATA_PATH.exists():
+        _TEXT_CONTENT_CACHE["mtime"] = None
+        _TEXT_CONTENT_CACHE["payload"] = {}
         return {}
+
+    mtime = DATA_PATH.stat().st_mtime
+    if _TEXT_CONTENT_CACHE["payload"] is not None and _TEXT_CONTENT_CACHE["mtime"] == mtime:
+        return _TEXT_CONTENT_CACHE["payload"]
 
     with DATA_PATH.open("r", encoding="utf-8") as file:
         data = json.load(file)
 
     if not isinstance(data, dict):
-        return {}
+        data = {}
+
+    _TEXT_CONTENT_CACHE["mtime"] = mtime
+    _TEXT_CONTENT_CACHE["payload"] = data
     return data
 
 
@@ -21,6 +34,9 @@ def _save_all(content):
     DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
     with DATA_PATH.open("w", encoding="utf-8") as file:
         json.dump(content, file, indent=2)
+
+    _TEXT_CONTENT_CACHE["mtime"] = DATA_PATH.stat().st_mtime
+    _TEXT_CONTENT_CACHE["payload"] = content
 
 
 def get_text_content(topic_slug):

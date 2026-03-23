@@ -1,21 +1,24 @@
-## Learning System
+<!-- ## Learning Paradiso
 
-Flask-based LMS for an Operating Systems course with video lessons, text content, notes, and direct messaging.
+Flask-based LMS for department-level learning management with Anna University style curriculum controls, topic delivery, and role-based access.
 
 ### Features
 
 - Home page with available units and topics
 - Topic page with ordered sections: Overview, Text Content, Notes, and DA (DM)
-- Staff content page to create units/topics and upload TXT/PDF notes
-- Admin directory management for semester, courses, staff, and student
+- Staff content pages to create units/topics and upload TXT/PDF notes
+- Admin curriculum management for departments and subjects with subject codes
+- Admin account management for staff and students with email/password
 - Direct messaging between staff and students
 - Local uploads folder for note storage
 
-### Course Structure
+### Curriculum Structure
 
-- Course: `Operating Systems`
+- App Name: `Learning Paradiso`
+- Example course: `Operating Systems`
 - Units: Introduction, Process Management, Memory Management, Storage Management
-- Topics are stored in `data/course_catalog.json` and each topic maps to video and notes
+- Topics a`re stored in `data/course_catalog.json` and each topic maps to video and notes
+- Department/subject catalog is stored in `data/anna_curriculum.json`
 
 ### Setup
 
@@ -48,8 +51,12 @@ MYSQL_DATABASE=ai_lms
 - `GET /` home page
 - `GET /topic/<topic_slug>` topic learning page
 - `GET /staff` staff upload page
+- `GET /admin` admin management page
 - `POST /upload` upload notes
 - `POST /staff/unit` create unit
 - `POST /staff/topic` create topic
+- `POST /admin/curriculum/department` add department
+- `POST /admin/curriculum/subject` add subject with subject code
+- `POST /admin/users` create staff/student account (email/password)
 - `GET /download/<topic_slug>` download notes
-- `GET /dm` direct message page
+- `GET /dm` direct message page -->

@@ -1,0 +1,12 @@
+{
+  "semester": [],
+  "courses": [
+    {
+      "slug": "computer_networks",
+      "name": "Computer Networks",
+      "details": "Gives you detailed  view how every computer talks with each other."
+    }
+  ],
+  "staff": [],
+  "student": []
+}

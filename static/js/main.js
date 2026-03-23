@@ -121,6 +121,43 @@ function setupTabKeyboardNavigation() {
     });
 }
 
+function setupInternalPrefetch() {
+    const seen = new Set();
+    const saveData = navigator.connection && navigator.connection.saveData;
+    if (saveData) {
+        return;
+    }
+
+    const prefetch = (url) => {
+        if (!url || seen.has(url)) {
+            return;
+        }
+        if (!url.startsWith("/") || url.startsWith("//")) {
+            return;
+        }
+        if (url.startsWith("/logout") || url.startsWith("/download/")) {
+            return;
+        }
+
+        seen.add(url);
+        fetch(url, {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "force-cache",
+            headers: {
+                "X-Prefetch": "1",
+            },
+        }).catch(() => {});
+    };
+
+    document.querySelectorAll("a[href]").forEach((link) => {
+        const href = link.getAttribute("href") || "";
+        link.addEventListener("mouseenter", () => prefetch(href), { passive: true });
+        link.addEventListener("touchstart", () => prefetch(href), { passive: true });
+        link.addEventListener("focus", () => prefetch(href), { passive: true });
+    });
+}
+
 function setupMinimalVideoControls() {
     const frame = document.getElementById("topicVideoFrame");
     const playPauseButton = document.getElementById("videoPlayPauseButton");
@@ -318,6 +355,95 @@ async function handleNotesImageUpload() {
     }
 }
 
+async function handleMcqUpload() {
+    const form = document.getElementById("mcqUploadForm");
+    const status = document.getElementById("mcqUploadStatus");
+    const button = form ? form.querySelector("button[type='submit']") : null;
+
+    if (!form || !status || !button) {
+        return;
+    }
+
+    const formData = new FormData(form);
+    status.innerText = "Uploading MCQ JSON...";
+    setButtonLoading(button, true, "Upload MCQ JSON", "Uploading...");
+
+    try {
+        const response = await fetch("/staff/mcq-upload", {
+            method: "POST",
+            body: formData,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || "Unable to upload MCQ.");
+        }
+
+        status.innerText = `${data.message || "MCQ uploaded."} (${data.total_questions} questions)`;
+        form.reset();
+    } catch (error) {
+        status.innerText = error.message || "Unable to upload MCQ.";
+    } finally {
+        setButtonLoading(button, false, "Upload MCQ JSON", "Uploading...");
+    }
+}
+
+async function submitTopicMcq(topicSlug) {
+    const status = document.getElementById("mcqStatus");
+    const markLine = document.getElementById("mcqMarkLine");
+    const button = document.getElementById("submitMcqButton");
+    const questionCards = Array.from(document.querySelectorAll("#mcqQuestionsContainer .mcq-card"));
+
+    if (!status || !button || !questionCards.length) {
+        return;
+    }
+
+    const answers = questionCards.map((card) => {
+        const index = card.dataset.questionIndex;
+        const selected = card.querySelector(`input[name='mcq_q_${index}']:checked`);
+        return selected ? Number(selected.value) : null;
+    });
+
+    const unanswered = answers.filter((item) => item === null).length;
+    if (unanswered > 0) {
+        status.innerText = `Answer all questions before submit. Pending: ${unanswered}`;
+        if (markLine) {
+            markLine.innerText = "--";
+        }
+        return;
+    }
+
+    status.innerText = "Submitting MCQ...";
+    setButtonLoading(button, true, "Submit MCQ", "Submitting...");
+
+    try {
+        const response = await fetch(`/topic/${encodeURIComponent(topicSlug)}/mcq-attempt`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ answers }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || "Unable to submit MCQ.");
+        }
+
+        const result = data.result || {};
+        status.innerText = `Score: ${result.score}% (${result.correct}/${result.total}) · ${result.passed ? "Passed" : "Not passed"}. Required: ${result.pass_percentage}%`;
+        if (markLine) {
+            markLine.innerText = `${result.score}%`;
+        }
+        if (result.passed) {
+            window.setTimeout(() => window.location.reload(), 800);
+        }
+    } catch (error) {
+        status.innerText = error.message || "Unable to submit MCQ.";
+        if (markLine) {
+            markLine.innerText = "--";
+        }
+    } finally {
+        setButtonLoading(button, false, "Submit MCQ", "Submitting...");
+    }
+}
+
 async function handleContentCreate() {
     const form = document.getElementById("contentForm");
     const status = document.getElementById("contentStatus");
@@ -427,10 +553,123 @@ async function handleAdminDirectorySave() {
     }
 }
 
+async function handleDepartmentSave() {
+    const form = document.getElementById("departmentForm");
+    const status = document.getElementById("departmentStatus");
+    const button = form ? form.querySelector("button[type='submit']") : null;
+
+    if (!form || !status || !button) {
+        return;
+    }
+
+    const payload = {
+        code: (form.elements.code.value || "").trim(),
+        name: (form.elements.name.value || "").trim(),
+    };
+
+    status.innerText = "Adding department...";
+    setButtonLoading(button, true, "Add Department", "Adding...");
+
+    try {
+        const response = await fetch("/admin/curriculum/department", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        status.innerText = data.message || data.error || "Request finished.";
+        if (response.ok) {
+            form.reset();
+            window.setTimeout(() => window.location.reload(), 600);
+        }
+    } catch (error) {
+        status.innerText = "Unable to add department.";
+    } finally {
+        setButtonLoading(button, false, "Add Department", "Adding...");
+    }
+}
+
+async function handleSubjectSave() {
+    const form = document.getElementById("subjectForm");
+    const status = document.getElementById("subjectStatus");
+    const button = form ? form.querySelector("button[type='submit']") : null;
+
+    if (!form || !status || !button) {
+        return;
+    }
+
+    const payload = {
+        department_slug: (form.elements.department_slug.value || "").trim(),
+        subject_code: (form.elements.subject_code.value || "").trim(),
+        title: (form.elements.title.value || "").trim(),
+        semester: (form.elements.semester.value || "").trim(),
+    };
+
+    status.innerText = "Adding subject...";
+    setButtonLoading(button, true, "Add Subject", "Adding...");
+
+    try {
+        const response = await fetch("/admin/curriculum/subject", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        status.innerText = data.message || data.error || "Request finished.";
+        if (response.ok) {
+            form.reset();
+            window.setTimeout(() => window.location.reload(), 600);
+        }
+    } catch (error) {
+        status.innerText = "Unable to add subject.";
+    } finally {
+        setButtonLoading(button, false, "Add Subject", "Adding...");
+    }
+}
+
+async function handleAdminUserCreate() {
+    const form = document.getElementById("adminUserForm");
+    const status = document.getElementById("adminUserStatus");
+    const button = form ? form.querySelector("button[type='submit']") : null;
+
+    if (!form || !status || !button) {
+        return;
+    }
+
+    const payload = {
+        full_name: (form.elements.full_name.value || "").trim(),
+        email: (form.elements.email.value || "").trim(),
+        password: form.elements.password.value || "",
+        role: (form.elements.role.value || "").trim(),
+    };
+
+    status.innerText = "Creating account...";
+    setButtonLoading(button, true, "Create Account", "Creating...");
+
+    try {
+        const response = await fetch("/admin/users", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+        const data = await response.json();
+        status.innerText = data.message || data.error || "Request finished.";
+        if (response.ok) {
+            form.reset();
+            window.setTimeout(() => window.location.reload(), 600);
+        }
+    } catch (error) {
+        status.innerText = "Unable to create account.";
+    } finally {
+        setButtonLoading(button, false, "Create Account", "Creating...");
+    }
+}
+
 async function handleTextContentSave() {
     const form = document.getElementById("textContentForm");
     const status = document.getElementById("textContentStatus");
     const button = form.querySelector("button[type='submit']");
+    const idleText = button ? (button.dataset.idleText || button.innerText || "Save Text Content") : "Save Text Content";
     const extraFields = [];
     document.querySelectorAll(".extra-field-row").forEach((row) => {
         const label = (row.querySelector(".extra-field-label") || {}).value || "";
@@ -478,7 +717,7 @@ async function handleTextContentSave() {
     };
 
     status.innerText = "Saving text content...";
-    setButtonLoading(button, true, "Save Text Content", "Saving...");
+    setButtonLoading(button, true, idleText, "Saving...");
 
     try {
         const response = await fetch("/staff/text-content", {
@@ -494,7 +733,106 @@ async function handleTextContentSave() {
     } catch (error) {
         status.innerText = "Unable to save text content.";
     } finally {
-        setButtonLoading(button, false, "Save Text Content", "Saving...");
+        setButtonLoading(button, false, idleText, "Saving...");
+    }
+}
+
+function setTextContentRows(containerId, rowClass, firstClass, firstPlaceholder, secondClass, secondPlaceholder, entries, keyFirst, keySecond) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = "";
+
+    const list = Array.isArray(entries) ? entries : [];
+    if (!list.length) {
+        container.appendChild(buildDynamicRow(rowClass, firstClass, firstPlaceholder, secondClass, secondPlaceholder));
+        return;
+    }
+
+    list.forEach((entry) => {
+        const row = buildDynamicRow(rowClass, firstClass, firstPlaceholder, secondClass, secondPlaceholder);
+        const firstInput = row.querySelector(`.${firstClass}`);
+        const secondInput = row.querySelector(`.${secondClass}`);
+        if (firstInput) {
+            firstInput.value = (entry && entry[keyFirst]) ? String(entry[keyFirst]) : "";
+        }
+        if (secondInput) {
+            secondInput.value = (entry && entry[keySecond]) ? String(entry[keySecond]) : "";
+        }
+        container.appendChild(row);
+    });
+}
+
+async function loadExistingTextContent() {
+    const form = document.getElementById("textContentForm");
+    const status = document.getElementById("textContentLoadStatus");
+    const topicSlug = form && form.elements && form.elements.topic_slug
+        ? String(form.elements.topic_slug.value || "").trim()
+        : "";
+
+    if (!status || !form) {
+        return;
+    }
+
+    if (!topicSlug) {
+        status.innerText = "Select a topic first.";
+        return;
+    }
+
+    status.innerText = "Loading existing content...";
+    try {
+        const response = await fetch(`/staff/text-content/${encodeURIComponent(topicSlug)}`);
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || "Unable to load text content.");
+        }
+
+        const payload = data.text_content || {};
+        form.elements.explanation.value = payload.explanation || "";
+        form.elements.example.value = payload.example || "";
+        form.elements.analogy.value = payload.analogy || "";
+
+        setTextContentRows(
+            "extraFieldsContainer",
+            "extra-field-row",
+            "extra-field-label",
+            "Field Label",
+            "extra-field-value",
+            "Field Value",
+            payload.extra_fields,
+            "label",
+            "value"
+        );
+
+        setTextContentRows(
+            "relatedUrlsContainer",
+            "related-url-row",
+            "related-url-title",
+            "URL Title (optional)",
+            "related-url-value",
+            "https://example.com/reference",
+            payload.related_urls,
+            "title",
+            "url"
+        );
+
+        setTextContentRows(
+            "imageRefsContainer",
+            "image-ref-row",
+            "image-ref-title",
+            "Image Title (optional)",
+            "image-ref-url",
+            "https://example.com/image.png",
+            payload.images,
+            "title",
+            "url"
+        );
+
+        status.innerText = "Existing content loaded.";
+    } catch (error) {
+        status.innerText = error.message || "Unable to load text content.";
     }
 }
 
@@ -794,6 +1132,7 @@ async function initDmPage() {
 
 document.addEventListener("DOMContentLoaded", () => {
     setupThemeToggle();
+    setupInternalPrefetch();
 
     const page = document.body.dataset.page;
 
@@ -858,6 +1197,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const studentNotesInput = document.getElementById("studentNotesInput");
         const studentNotesStatus = document.getElementById("studentNotesStatus");
         const studentNotesMeta = document.getElementById("studentNotesMeta");
+        const submitMcqButton = document.getElementById("submitMcqButton");
 
         if (saveStudentNotesButton) {
             saveStudentNotesButton.addEventListener("click", () => saveStudentNotes(topic));
@@ -870,9 +1210,13 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
+        if (submitMcqButton) {
+            submitMcqButton.addEventListener("click", () => submitTopicMcq(topic));
+        }
+
     }
 
-    if (page === "staff") {
+    if (page === "staff-create-content") {
         const noVideoCheckbox = document.getElementById("noVideo");
         const youtubeInput = document.getElementById("youtubeUrl");
 
@@ -910,15 +1254,39 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
 
+        const mcqUploadForm = document.getElementById("mcqUploadForm");
+        if (mcqUploadForm) {
+            mcqUploadForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                handleMcqUpload();
+            });
+        }
+
+    }
+
+    if (page === "staff-text-content-new" || page === "staff-text-content-update") {
         const textContentForm = document.getElementById("textContentForm");
         if (textContentForm) {
+            const submitButton = textContentForm.querySelector("button[type='submit']");
+            if (submitButton) {
+                submitButton.dataset.idleText = submitButton.innerText;
+            }
+
             setupTextContentBuilder();
             textContentForm.addEventListener("submit", (event) => {
                 event.preventDefault();
                 handleTextContentSave();
             });
-        }
 
+            if (page === "staff-text-content-update") {
+                const loadButton = document.getElementById("loadTextContentButton");
+                if (loadButton) {
+                    loadButton.addEventListener("click", () => {
+                        loadExistingTextContent();
+                    });
+                }
+            }
+        }
     }
 
     if (page === "admin") {
@@ -927,6 +1295,30 @@ document.addEventListener("DOMContentLoaded", () => {
             form.addEventListener("submit", (event) => {
                 event.preventDefault();
                 handleAdminDirectorySave();
+            });
+        }
+
+        const departmentForm = document.getElementById("departmentForm");
+        if (departmentForm) {
+            departmentForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                handleDepartmentSave();
+            });
+        }
+
+        const subjectForm = document.getElementById("subjectForm");
+        if (subjectForm) {
+            subjectForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                handleSubjectSave();
+            });
+        }
+
+        const adminUserForm = document.getElementById("adminUserForm");
+        if (adminUserForm) {
+            adminUserForm.addEventListener("submit", (event) => {
+                event.preventDefault();
+                handleAdminUserCreate();
             });
         }
     }

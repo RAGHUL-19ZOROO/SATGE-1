@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Learning System</title>
+    <title>Login | {{ app_name }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version('css/style.css') }}">
 </head>
 <body>
     <div class="page-shell login-shell">
         <header class="topbar">
-            <span class="brand">Learning System</span>
+            <span class="brand">{{ app_name }}</span>
             <nav class="topbar-links topbar-user">
                 <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
             </nav>
@@ -21,7 +21,7 @@
         <section class="login-layout">
             <article class="hero-banner login-hero">
                 <div class="hero-copy">
-                    <p class="eyebrow">PT LEE</p>
+                    <p class="eyebrow">{{ app_name }}</p>
                     <h1>LEARNING MANAGEMENT SYSTEM</h1>
                     <p class="hero-text">
                         Students can learn with videos, text content, notes, and direct messages.
@@ -72,7 +72,7 @@
         </section>
     </div>
 
-    <script src="/static/js/main.js"></script>
+    <script src="/static/js/main.js?v={{ asset_version('js/main.js') }}"></script>
 
 </body>
 </html>

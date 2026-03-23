@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Text Content | {{ app_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version('css/style.css') }}">
+</head>
+<body data-page="staff-text-content-new">
+    <div class="page-shell">
+        <header class="topbar">
+            <a class="brand" href="/">{{ app_name }}</a>
+            <nav class="topbar-links topbar-user">
+                <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
+                <a href="/staff">Staff Home</a>
+                <a href="/staff/create-content">Create Content</a>
+                <a href="/staff/text-content/update">Update Text Content</a>
+                <a href="/logout">Logout</a>
+            </nav>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-stack page-flash-stack">
+                {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="panel teacher-hero">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Staff Panel</p>
+                    <h1>New Text Content</h1>
+                    <p class="panel-text">Create fresh text content entries for any topic.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="teacher-grid">
+            <article class="panel teacher-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Text Content</p>
+                        <h2>Save explanation, example, and analogy</h2>
+                    </div>
+                </div>
+
+                <form id="textContentForm" class="upload-form">
+                    <label for="textTopicSlug">Select Topic</label>
+                    <select id="textTopicSlug" name="topic_slug" required>
+                        <option value="">Choose a topic</option>
+                        {% for topic in topics %}
+                        <option value="{{ topic.slug }}">{{ topic.unit_title }} - {{ topic.title }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="textExplanation">Explanation</label>
+                    <textarea id="textExplanation" name="explanation" rows="4" placeholder="Clear explanation for this topic"></textarea>
+
+                    <label for="textExample">Example</label>
+                    <textarea id="textExample" name="example" rows="4" placeholder="Simple practical example"></textarea>
+
+                    <label for="textAnalogy">Analogy</label>
+                    <textarea id="textAnalogy" name="analogy" rows="4" placeholder="Real-world analogy for quick understanding"></textarea>
+
+                    <div class="dynamic-block">
+                        <div class="dynamic-head">
+                            <label>Extra Fields</label>
+                            <button id="addExtraFieldButton" class="secondary-btn action-add-btn" type="button">Add Field</button>
+                        </div>
+                        <div id="extraFieldsContainer" class="dynamic-list"></div>
+                    </div>
+
+                    <div class="dynamic-block">
+                        <div class="dynamic-head">
+                            <label>Related URLs</label>
+                            <button id="addRelatedUrlButton" class="secondary-btn action-add-btn" type="button">Add URL</button>
+                        </div>
+                        <div id="relatedUrlsContainer" class="dynamic-list"></div>
+                    </div>
+
+                    <div class="dynamic-block">
+                        <div class="dynamic-head">
+                            <label>Image References</label>
+                            <button id="addImageRefButton" class="secondary-btn action-add-btn" type="button">Add Image URL</button>
+                        </div>
+                        <div id="imageRefsContainer" class="dynamic-list"></div>
+                    </div>
+
+                    <div class="dynamic-block">
+                        <div class="dynamic-head">
+                            <label>Upload Image</label>
+                        </div>
+                        <div class="dynamic-row upload-image-row">
+                            <input id="textImageTitle" type="text" placeholder="Image Title (optional)">
+                            <input id="textImageFile" type="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp">
+                            <button id="uploadTextImageButton" class="secondary-btn action-upload-btn" type="button">Upload</button>
+                        </div>
+                        <p id="textImageUploadStatus" class="panel-text" role="status" aria-live="polite"></p>
+                    </div>
+
+                    <button class="primary-btn" type="submit">Save Text Content</button>
+                    <p id="textContentStatus" class="panel-text" role="status" aria-live="polite"></p>
+                </form>
+            </article>
+        </section>
+    </div>
+
+    <script src="/static/js/main.js?v={{ asset_version('js/main.js') }}"></script>
+</body>
+</html>

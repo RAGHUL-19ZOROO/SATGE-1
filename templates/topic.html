@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ topic.title }} | {{ course.title }}</title>
+    <title>{{ topic.title }} | {{ app_name }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version('css/style.css') }}">
 </head>
-<body data-page="topic" data-topic="{{ topic.slug }}">
+<body data-page="topic" data-topic="{{ topic.slug }}" data-user-role="{{ current_user.role }}">
     <div class="page-shell topic-shell course-player-shell">
         <header class="topbar">
-            <a class="brand" href="/">{{ course.title }}</a>
+            <a class="brand" href="/">{{ app_name }}</a>
             <nav class="topbar-links topbar-user">
                 <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
                 <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
@@ -24,6 +24,16 @@
                 <a href="/logout">Logout</a>
             </nav>
         </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-stack page-flash-stack">
+                {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
 
         <div class="player-layout">
             <aside class="playlist-panel panel">
@@ -44,10 +54,19 @@
                         <div class="playlist-items">
                             {% if unit.topics %}
                                 {% for item in unit.topics %}
+                                {% set is_locked = current_user.role == "student" and topic_access and not topic_access.get(item.slug, False) %}
+                                {% if is_locked %}
+                                <div class="playlist-item is-locked" aria-disabled="true">
+                                    <span class="playlist-state">Locked</span>
+                                    <strong>{{ item.title }}</strong>
+                                    <span class="panel-text">Pass previous topic MCQ with more than 80% to unlock.</span>
+                                </div>
+                                {% else %}
                                 <a class="playlist-item {% if item.slug == topic.slug %}is-playing{% endif %}" href="/topic/{{ item.slug }}">
                                     <span class="playlist-state">{% if item.slug == topic.slug %}Playing{% else %}Lesson{% endif %}</span>
                                     <strong>{{ item.title }}</strong>
                                 </a>
+                                {% endif %}
                                 {% endfor %}
                             {% else %}
                                 <div class="playlist-empty">No lessons added yet.</div>
@@ -83,6 +102,7 @@
                             id="topicVideoFrame"
                             src="https://www.youtube-nocookie.com/embed/{{ topic.video_id }}?controls=0&fs=0&disablekb=1&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&enablejsapi=1&origin={{ request.host_url.rstrip('/') }}"
                             title="{{ topic.title }}"
+                            loading="lazy"
                             frameborder="0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowfullscreen>
@@ -107,6 +127,7 @@
                     <nav class="player-tabs" aria-label="Lesson sections" role="tablist">
                         <button id="overviewTabButton" class="player-tab is-active" type="button" data-tab-target="overviewTab" role="tab" aria-selected="true" aria-controls="overviewTab" tabindex="0">Overview</button>
                         <button id="textTabButton" class="player-tab" type="button" data-tab-target="textTab" role="tab" aria-selected="false" aria-controls="textTab" tabindex="-1">Text Content</button>
+                        <button id="mcqTabButton" class="player-tab" type="button" data-tab-target="mcqTab" role="tab" aria-selected="false" aria-controls="mcqTab" tabindex="-1">MCQ</button>
                         <button id="notesTabButton" class="player-tab" type="button" data-tab-target="notesTab" role="tab" aria-selected="false" aria-controls="notesTab" tabindex="-1">Notes</button>
                     </nav>
 
@@ -176,7 +197,7 @@
                                     <div class="image-grid">
                                         {% for item in text_content.images %}
                                         <a class="image-card" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
-                                            <img src="{{ item.url }}" alt="{{ item.title or 'Topic image' }}">
+                                            <img src="{{ item.url }}" alt="{{ item.title or 'Topic image' }}" loading="lazy" decoding="async">
                                             <span>{{ item.title or "Reference Image" }}</span>
                                         </a>
                                         {% endfor %}
@@ -189,7 +210,7 @@
                                     <div class="image-grid">
                                         {% for item in notes_images %}
                                         <a class="image-card" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
-                                            <img src="{{ item.url }}" alt="{{ item.title or 'Topic image' }}">
+                                            <img src="{{ item.url }}" alt="{{ item.title or 'Topic image' }}" loading="lazy" decoding="async">
                                             <span>{{ item.title or "Reference Image" }}</span>
                                         </a>
                                         {% endfor %}
@@ -202,6 +223,51 @@
                                     <a class="primary-btn" href="/dm">Open DA (DM)</a>
                                 </article>
                             </div>
+                        </section>
+
+                        <section id="mcqTab" class="player-tab-panel" role="tabpanel" aria-labelledby="mcqTabButton" hidden>
+                            <article class="content-card lesson-grid-wide">
+                                <h3>Topic MCQ</h3>
+                                <p class="panel-text">Score more than 80% to unlock the next topic.</p>
+                                <p id="mcqStatus" class="panel-text" role="status" aria-live="polite">
+                                    {% if mcq_result and mcq_result.best_score is defined %}
+                                    Best Score: {{ mcq_result.best_score }}% {% if mcq_result.passed %}(Passed){% endif %}
+                                    {% else %}
+                                    No attempts yet.
+                                    {% endif %}
+                                </p>
+                                <p id="mcqMarkLine" class="score-text">
+                                    {% if mcq_result and mcq_result.last_score is defined %}
+                                    {{ mcq_result.last_score }}%
+                                    {% else %}
+                                    --
+                                    {% endif %}
+                                </p>
+
+                                {% if mcq_questions %}
+                                <div id="mcqQuestionsContainer" class="mcq-list">
+                                    {% for item in mcq_questions %}
+                                    {% set question_index = loop.index0 %}
+                                    <article class="mcq-card" data-question-index="{{ loop.index0 }}">
+                                        <h3>Q{{ loop.index }}. {{ item.question }}</h3>
+                                        <div class="options-grid">
+                                            {% for option in item.options %}
+                                            <label class="option-pill">
+                                                <input type="radio" name="mcq_q_{{ question_index }}" value="{{ loop.index0 }}">
+                                                <span>{{ option }}</span>
+                                            </label>
+                                            {% endfor %}
+                                        </div>
+                                    </article>
+                                    {% endfor %}
+                                </div>
+                                <div class="action-row">
+                                    <button id="submitMcqButton" class="primary-btn" type="button">Submit MCQ</button>
+                                </div>
+                                {% else %}
+                                <p class="panel-text">MCQ has not been uploaded by staff for this topic yet.</p>
+                                {% endif %}
+                            </article>
                         </section>
 
                         <section id="notesTab" class="player-tab-panel" role="tabpanel" aria-labelledby="notesTabButton" hidden>
@@ -228,7 +294,7 @@
                                         <div class="image-grid">
                                             {% for item in notes_images %}
                                             <a class="image-card" href="{{ item.url }}" target="_blank" rel="noopener noreferrer">
-                                                <img src="{{ item.url }}" alt="{{ item.title or 'Notes image' }}">
+                                                <img src="{{ item.url }}" alt="{{ item.title or 'Notes image' }}" loading="lazy" decoding="async">
                                                 <span>{{ item.title or "Reference Image" }}</span>
                                             </a>
                                             {% endfor %}
@@ -263,6 +329,6 @@
         </div>
     </div>
 
-    <script src="/static/js/main.js"></script>
+    <script src="/static/js/main.js?v={{ asset_version('js/main.js') }}"></script>
 </body>
 </html>

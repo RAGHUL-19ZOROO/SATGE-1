@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Content | {{ app_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version('css/style.css') }}">
+</head>
+<body data-page="staff-create-content">
+    <div class="page-shell">
+        <header class="topbar">
+            <a class="brand" href="/">{{ app_name }}</a>
+            <nav class="topbar-links topbar-user">
+                <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
+                <a href="/staff">Staff Home</a>
+                <a href="/staff/text-content/new">New Text Content</a>
+                <a href="/staff/text-content/update">Update Text Content</a>
+                <a href="/logout">Logout</a>
+            </nav>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-stack page-flash-stack">
+                {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="panel teacher-hero">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Staff Panel</p>
+                    <h1>Create Content</h1>
+                    <p class="panel-text">Create units/topics and upload notes assets from one dedicated page.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="teacher-grid">
+            <article class="panel teacher-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Create Content</p>
+                        <h2>Create unit and topic</h2>
+                    </div>
+                </div>
+
+                <form id="contentForm" class="upload-form" enctype="multipart/form-data">
+                    <label for="newUnitTitle">New Unit Title (optional)</label>
+                    <input id="newUnitTitle" name="new_unit_title" type="text" placeholder="Example: Unit V - File Protection">
+
+                    <label for="topicUnit">Or Select Existing Unit</label>
+                    <select id="topicUnit" name="unit_slug">
+                        <option value="">Choose a unit</option>
+                        {% for unit in units %}
+                        <option value="{{ unit.slug }}">{{ unit.title }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="topicTitle">Topic Title (optional)</label>
+                    <input id="topicTitle" name="title" type="text" placeholder="Example: Page Replacement Algorithms">
+
+                    <label for="topicDescription">Topic Description</label>
+                    <textarea id="topicDescription" name="description" rows="4" placeholder="Short topic summary for students"></textarea>
+
+                    <label for="youtubeUrl">YouTube Video Link</label>
+                    <input id="youtubeUrl" name="youtube_url" type="url" placeholder="https://www.youtube.com/watch?v=...">
+
+                    <label class="inline-check" for="noVideo">
+                        <input id="noVideo" name="no_video" type="checkbox">
+                        <span>No Video for this topic</span>
+                    </label>
+
+                    <label for="topicNotesFile">Topic Notes</label>
+                    <input id="topicNotesFile" name="notes_file" type="file" accept=".txt,.pdf">
+
+                    <button class="primary-btn" type="submit">Create Content</button>
+                    <p id="contentStatus" class="panel-text" role="status" aria-live="polite"></p>
+                </form>
+            </article>
+
+            <article class="panel teacher-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Update Notes</p>
+                        <h2>Upload notes and notes images</h2>
+                    </div>
+                </div>
+
+                <form id="uploadForm" class="upload-form">
+                    <label for="topicName">Topic Name</label>
+                    <input id="topicName" name="topic_name" list="topicOptions" placeholder="Example: cpu_scheduling" required>
+                    <datalist id="topicOptions">
+                        {% for topic in topics %}
+                        <option value="{{ topic.slug }}">{{ topic.unit_title }} - {{ topic.title }}</option>
+                        {% endfor %}
+                    </datalist>
+
+                    <label for="notesFile">Notes File</label>
+                    <input id="notesFile" name="notes_file" type="file" accept=".txt,.pdf" required>
+
+                    <button class="primary-btn" type="submit">Upload Notes</button>
+                    <p id="uploadStatus" class="panel-text" role="status" aria-live="polite"></p>
+                </form>
+
+                <form id="notesImageForm" class="upload-form">
+                    <label for="notesImageTopicSlug">Notes Image Topic</label>
+                    <select id="notesImageTopicSlug" name="topic_slug" required>
+                        <option value="">Choose a topic</option>
+                        {% for topic in topics %}
+                        <option value="{{ topic.slug }}">{{ topic.unit_title }} - {{ topic.title }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="notesImageTitle">Image Title (optional)</label>
+                    <input id="notesImageTitle" name="title" type="text" placeholder="Example: CPU scheduling chart">
+
+                    <label for="notesImageFile">Image File</label>
+                    <input id="notesImageFile" name="image_file" type="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" required>
+
+                    <button class="secondary-btn action-upload-btn" type="submit">Upload Notes Image</button>
+                    <p id="notesImageStatus" class="panel-text" role="status" aria-live="polite"></p>
+                </form>
+
+                <form id="mcqUploadForm" class="upload-form" enctype="multipart/form-data">
+                    <label for="mcqTopicSlug">MCQ Topic</label>
+                    <select id="mcqTopicSlug" name="topic_slug" required>
+                        <option value="">Choose a topic</option>
+                        {% for topic in topics %}
+                        <option value="{{ topic.slug }}">{{ topic.unit_title }} - {{ topic.title }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="mcqJsonFile">MCQ JSON File</label>
+                    <input id="mcqJsonFile" name="mcq_file" type="file" accept="application/json,.json" required>
+                    <p class="panel-text">JSON format: [{"question":"...","options":["A","B","C","D"],"answer_index":1}]</p>
+
+                    <button class="secondary-btn action-upload-btn" type="submit">Upload MCQ JSON</button>
+                    <p id="mcqUploadStatus" class="panel-text" role="status" aria-live="polite"></p>
+                </form>
+            </article>
+        </section>
+    </div>
+
+    <script src="/static/js/main.js?v={{ asset_version('js/main.js') }}"></script>
+</body>
+</html>
