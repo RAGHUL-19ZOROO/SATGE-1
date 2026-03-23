@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from urllib.parse import urlsplit
 
 
 DATA_PATH = Path("data/topic_text_content.json")
@@ -7,6 +8,17 @@ _TEXT_CONTENT_CACHE = {
     "mtime": None,
     "payload": None,
 }
+
+_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".avif"}
+
+
+def _looks_like_image_url(url):
+    parsed = urlsplit(str(url or "").strip())
+    if parsed.scheme not in {"http", "https"}:
+        return False
+
+    suffix = Path(parsed.path or "").suffix.lower()
+    return bool(suffix and suffix in _IMAGE_EXTENSIONS)
 
 
 def _load_all():
@@ -55,6 +67,31 @@ def get_text_content(topic_slug):
     if not isinstance(images, list):
         images = []
 
+    normalized_related_urls = []
+    for item in related_urls:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "").strip()
+        url = str(item.get("url") or "").strip()
+        if not url:
+            continue
+        normalized_related_urls.append({"title": title, "url": url})
+
+    normalized_images = []
+    for item in images:
+        if not isinstance(item, dict):
+            continue
+        title = str(item.get("title") or "").strip()
+        url = str(item.get("url") or "").strip()
+        if not url:
+            continue
+
+        if _looks_like_image_url(url):
+            normalized_images.append({"title": title, "url": url})
+        else:
+            # If an item was mistakenly saved under images, show it as a normal link.
+            normalized_related_urls.append({"title": title, "url": url})
+
     return {
         "explanation": str(entry.get("explanation") or ""),
         "example": str(entry.get("example") or ""),
@@ -72,7 +109,7 @@ def get_text_content(topic_slug):
                 "title": str(item.get("title") or "").strip(),
                 "url": str(item.get("url") or "").strip(),
             }
-            for item in related_urls
+            for item in normalized_related_urls
             if isinstance(item, dict) and str(item.get("url") or "").strip()
         ],
         "images": [
@@ -80,7 +117,7 @@ def get_text_content(topic_slug):
                 "title": str(item.get("title") or "").strip(),
                 "url": str(item.get("url") or "").strip(),
             }
-            for item in images
+            for item in normalized_images
             if isinstance(item, dict) and str(item.get("url") or "").strip()
         ],
     }
@@ -113,8 +150,13 @@ def save_text_content(topic_slug, explanation, example, analogy, extra_fields=No
             continue
         title = str(item.get("title") or "").strip()
         url = str(item.get("url") or "").strip()
-        if url:
+        if not url:
+            continue
+
+        if _looks_like_image_url(url):
             cleaned_images.append({"title": title, "url": url})
+        else:
+            cleaned_related_urls.append({"title": title, "url": url})
 
     all_content[topic_slug] = {
         "explanation": str(explanation or "").strip(),

@@ -1,5 +1,20 @@
 const THEME_STORAGE_KEY = "satge_theme";
 
+function ensureBrainFavicon() {
+    const svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='52'>🧠</text></svg>";
+    const faviconHref = `data:image/svg+xml,${encodeURIComponent(svg)}`;
+
+    let favicon = document.querySelector("link[rel='icon']");
+    if (!favicon) {
+        favicon = document.createElement("link");
+        favicon.setAttribute("rel", "icon");
+        document.head.appendChild(favicon);
+    }
+
+    favicon.setAttribute("type", "image/svg+xml");
+    favicon.setAttribute("href", faviconHref);
+}
+
 function getInitialTheme() {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (stored === "dark" || stored === "light") {
@@ -1131,6 +1146,7 @@ async function initDmPage() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    ensureBrainFavicon();
     setupThemeToggle();
     setupInternalPrefetch();
 

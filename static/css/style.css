@@ -996,10 +996,14 @@ body.theme-dark .playlist-item.is-locked {
 
 .source-list a {
     color: var(--accent-strong);
-    padding: 8px 12px;
-    border-radius: 999px;
+    display: block;
+    max-width: 100%;
+    padding: 10px 12px;
+    border-radius: 14px;
     background: rgba(88, 184, 255, 0.1);
-    width: fit-content;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.45;
     transition: background 180ms ease, color 180ms ease;
 }
 

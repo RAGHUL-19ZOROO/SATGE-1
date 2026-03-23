@@ -186,7 +186,9 @@
                                     <h3>Related URLs</h3>
                                     <div class="source-list">
                                         {% for item in text_content.related_urls %}
-                                        <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title or item.url }}</a>
+                                        <a href="{{ item.url }}" target="_blank" rel="noopener noreferrer" title="{{ item.url }}">
+                                            {{ item.title or (item.url|truncate(85, True, '...')) }}
+                                        </a>
                                         {% endfor %}
                                     </div>
                                 </article>

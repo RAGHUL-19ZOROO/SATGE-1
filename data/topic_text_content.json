@@ -1,14 +1,15 @@
 {
   "what_is_operating_system": {
-    "explanation": "A",
-    "example": "B",
-    "analogy": "C",
-    "extra_fields": [
+    "explanation": "",
+    "example": "",
+    "analogy": "",
+    "extra_fields": [],
+    "related_urls": [
       {
-        "label": "Diagram",
-        "value": "Diagram"
+        "title": "Test",
+        "url": "https://www.startpage.com/av/proxy-image?piurl=https%3A%2F%2Fwww.stuff.tv%2Fwp-content%2Fuploads%2Fsites%2F2%2F2023%2F06%2FMacOS-Sonoma-widgets-transparent.jpg&sp=1774274128T51ebac7bc417716ce1a2f596532fc675edd7231a13df4991dd9373116c6a780e"
       }
     ],
-    "related_urls": []
+    "images": []
   }
 }
