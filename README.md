@@ -36,6 +36,7 @@ Learning Paradiso is built to combine academic structure, content delivery, and 
 - Admin account management for staff and students with email/password
 - Direct messaging between staff and students
 - Local uploads folder for note storage
+- Student topic page can show short Wikipedia summaries in English and Tamil (when available)
 
 ## Curriculum Structure
 

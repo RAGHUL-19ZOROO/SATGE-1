@@ -137,6 +137,15 @@
                                 <article class="content-card">
                                     <h3>Topic Overview</h3>
                                     <p class="panel-text">{{ topic.description }}</p>
+                                    {% if current_user.role == "student" and (english_summary or tamil_summary) %}
+                                    <h3>Wikipedia Summary</h3>
+                                    <div class="action-row" role="group" aria-label="Summary language selection">
+                                        <button id="summaryEnglishButton" class="secondary-btn" type="button" data-summary-lang="en" aria-pressed="true">English</button>
+                                        <button id="summaryTamilButton" class="secondary-btn" type="button" data-summary-lang="ta" aria-pressed="false">Tamil</button>
+                                    </div>
+                                    <p id="summaryEnglishText" class="panel-text" data-summary-content="en">{{ english_summary or "English summary not available for this topic." }}</p>
+                                    <p id="summaryTamilText" class="panel-text" data-summary-content="ta" hidden>{{ tamil_summary or "இந்த தலைப்புக்கு தமிழ் சுருக்கம் கிடைக்கவில்லை." }}</p>
+                                    {% endif %}
                                     <ul class="bullet-list">
                                         <li>Unit: {{ topic.unit_title }}</li>
                                         <li>Course: {{ course.title }}</li>

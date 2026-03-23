@@ -223,6 +223,33 @@ function setupMinimalVideoControls() {
     });
 }
 
+function setupSummaryLanguageSelector() {
+    const languageButtons = Array.from(document.querySelectorAll("[data-summary-lang]"));
+    const summaryBlocks = Array.from(document.querySelectorAll("[data-summary-content]"));
+
+    if (!languageButtons.length || !summaryBlocks.length) {
+        return;
+    }
+
+    const setLanguage = (language) => {
+        languageButtons.forEach((button) => {
+            const isActive = button.dataset.summaryLang === language;
+            button.setAttribute("aria-pressed", isActive ? "true" : "false");
+            button.classList.toggle("is-active", isActive);
+        });
+
+        summaryBlocks.forEach((block) => {
+            block.hidden = block.dataset.summaryContent !== language;
+        });
+    };
+
+    languageButtons.forEach((button) => {
+        button.addEventListener("click", () => setLanguage(button.dataset.summaryLang));
+    });
+
+    setLanguage("en");
+}
+
 function createMessageCard(role, title) {
     const card = document.createElement("article");
     card.className = `message-card ${role}`;
@@ -1156,6 +1183,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const topic = document.body.dataset.topic;
         loadStudentNotes(topic);
         setupMinimalVideoControls();
+        setupSummaryLanguageSelector();
 
         const watchVideoTopButton = document.getElementById("watchVideoTopButton");
         const readNotesTopButton = document.getElementById("readNotesTopButton");

@@ -48,6 +48,7 @@ from utils.topic_catalog import (
     get_topic_or_404,
     list_units,
 )
+from utils.wiki_summary import get_topic_summary
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = FLASK_SECRET_KEY
@@ -243,7 +244,10 @@ def home():
 def topic_page(topic_slug):
     topic = get_topic_or_404(topic_slug)
     user = current_user()
+    course = get_course()
     topic_access = {}
+    english_summary = ""
+    tamil_summary = ""
     if user and user.get("role") == "student":
         topic_access = get_topic_access_map(user["id"])
         is_unlocked = topic_access.get(topic_slug, False)
@@ -251,16 +255,26 @@ def topic_page(topic_slug):
             flash("This topic is locked. Score above 80% in the previous topic MCQ to unlock it.", "warning")
             return redirect(url_for("home"))
 
+        query_with_subject = f"{topic.get('title', '')} {course.get('title', '')}".strip()
+        english_summary = get_topic_summary(query_with_subject, language="en") or get_topic_summary(
+            topic.get("title", ""), language="en"
+        )
+        tamil_summary = get_topic_summary(query_with_subject, language="ta") or get_topic_summary(
+            topic.get("title", ""), language="ta"
+        )
+
     topic["has_notes"] = bool(get_notes(topic_slug))
     mcq_questions = get_topic_mcqs_for_student(topic_slug)
     topic_result = get_topic_result(user["id"], topic_slug) if user else {}
 
     return render_template(
         "topic.html",
-        course=get_course(),
+        course=course,
         topic=topic,
         text_content=get_text_content(topic_slug),
         notes_images=get_notes_images(topic_slug),
+        english_summary=english_summary,
+        tamil_summary=tamil_summary,
         mcq_questions=mcq_questions,
         mcq_result=topic_result,
         topic_access=topic_access,
