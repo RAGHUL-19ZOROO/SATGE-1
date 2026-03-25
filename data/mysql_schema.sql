@@ -37,8 +37,17 @@ CREATE TABLE IF NOT EXISTS student_notes (
         ON DELETE CASCADE
 );
 
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_active ON users(is_active);
+CREATE TABLE IF NOT EXISTS subjects (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL UNIQUE,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_subjects_code ON subjects(code);
 
 -- Insert users after generating password hashes in Python:
 
@@ -48,3 +57,7 @@ CREATE INDEX idx_users_active ON users(is_active);
 -- ('OS Teacher', 'teacher@lms.com', 'paste_generated_hash_here', 'teacher'),
 -- ('OS Student', 'student@lms.com', 'paste_generated_hash_here', 'student'),
 -- ('System Admin', 'admin@lms.com', 'paste_generated_hash_here', 'admin');
+
+-- Insert default subject for OS:
+-- INSERT INTO subjects (name, code, description) VALUES
+-- ('Operating Systems', 'OS', 'Learn about operating systems, processes, memory management, and scheduling');

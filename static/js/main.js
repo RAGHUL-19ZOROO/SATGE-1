@@ -486,6 +486,143 @@ async function submitTopicMcq(topicSlug) {
     }
 }
 
+async function loadLearningAgent(topicSlug) {
+    const contentContainer = document.getElementById("learningAgentContent");
+    const statusElement = document.getElementById("learningAgentStatus");
+
+    if (!contentContainer || !statusElement) {
+        return;
+    }
+
+    statusElement.innerText = "Generating";
+    contentContainer.innerHTML = '<div class="learning-agent-loader"><p class="panel-text">Generating AI summary...</p></div>';
+
+    try {
+        const response = await fetch(`/topic/${encodeURIComponent(topicSlug)}/learning-agent`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Unable to generate learning content.");
+        }
+
+        if (!data.success) {
+            throw new Error(data.error || "Failed to generate learning content.");
+        }
+
+        // Build HTML for the learning agent content
+        let html = '';
+
+        // Explanation section
+        if (data.explanation) {
+            html += `
+                <div class="learning-section">
+                    <h4>Explanation</h4>
+                    <p class="panel-text">${data.explanation}</p>
+                </div>
+            `;
+        }
+
+        // Analogy section (optional)
+        if (data.analogy) {
+            html += `
+                <div class="learning-section">
+                    <h4>Analogy</h4>
+                    <p class="panel-text">${data.analogy}</p>
+                </div>
+            `;
+        }
+
+        // Key Points section
+        if (data.key_points && data.key_points.length > 0) {
+            html += `
+                <div class="learning-section">
+                    <h4>Key Points</h4>
+                    <ul class="bullet-list">
+                        ${data.key_points.map(point => `<li>${point}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Examples section
+        if (data.examples && data.examples.length > 0) {
+            html += `
+                <div class="learning-section">
+                    <h4>Examples</h4>
+                    <ul class="bullet-list">
+                        ${data.examples.map(example => `<li>${example}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Flowchart section
+        if (data.flowchart) {
+            html += `
+                <div class="learning-section">
+                    <h4>Flowchart</h4>
+                    <pre class="flowchart-text">${data.flowchart}</pre>
+                </div>
+            `;
+        }
+
+        // Exam Notes section
+        if (data.exam_notes) {
+            html += `
+                <div class="learning-section">
+                    <h4>Exam Notes</h4>
+                    <p class="panel-text">${data.exam_notes}</p>
+                </div>
+            `;
+        }
+
+        // Notes section
+        if (data.notes) {
+            html += `
+                <div class="learning-section">
+                    <h4>Notes</h4>
+                    <p class="panel-text">${data.notes}</p>
+                </div>
+            `;
+        }
+
+        // AI Knowledge section
+        if (data.ai_knowledge) {
+            html += `
+                <div class="learning-section">
+                    <h4>AI Knowledge</h4>
+                    <p class="panel-text">${data.ai_knowledge}</p>
+                </div>
+            `;
+        }
+
+        // Wikipedia Summary section
+        if (data.wiki_summary) {
+            html += `
+                <div class="learning-section">
+                    <h4>Wikipedia Summary</h4>
+                    <p class="panel-text">${data.wiki_summary}</p>
+                </div>
+            `;
+        }
+
+        if (html) {
+            contentContainer.innerHTML = html;
+            statusElement.innerText = "Ready";
+        } else {
+            throw new Error("No content generated.");
+        }
+    } catch (error) {
+        contentContainer.innerHTML = `
+            <div class="learning-agent-error">
+                <p class="panel-text"><strong>Error:</strong> ${error.message || "Unable to generate learning content."}</p>
+                <p class="panel-text">Please try again later or contact support.</p>
+            </div>
+        `;
+        statusElement.innerText = "Error";
+    }
+}
+
 async function handleContentCreate() {
     const form = document.getElementById("contentForm");
     const status = document.getElementById("contentStatus");
@@ -1234,6 +1371,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         document.querySelectorAll(".player-tab").forEach((tab) => {
             tab.addEventListener("click", () => activateTab(tab.dataset.tabTarget));
+            
+            // Load learning agent content when the learning agent tab is clicked
+            if (tab.dataset.tabTarget === "learningAgentTab") {
+                tab.addEventListener("click", () => {
+                    loadLearningAgent(topic);
+                }, { once: false });
+            }
         });
         setupTabKeyboardNavigation();
 

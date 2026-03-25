@@ -1544,6 +1544,7 @@ body.theme-dark .dm-contact-item.is-active {
     .lesson-grid,
     .teacher-grid,
     .admin-grid,
+    .subject-grid,
     .dm-layout {
         grid-template-columns: 1fr;
     }
@@ -1622,6 +1623,298 @@ body.theme-dark .dm-contact-item.is-active {
     .chat-history {
         min-height: 300px;
     }
+}
+
+/* Subject Grid and Cards */
+.subject-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    align-items: stretch;
+}
+
+.subject-card {
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 20px;
+    background: var(--panel);
+    display: grid;
+    gap: 12px;
+    align-content: start;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.subject-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--line-strong);
+    box-shadow: 0 12px 32px rgba(88, 184, 255, 0.14);
+}
+
+.subject-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.subject-code {
+    font-family: "Outfit", sans-serif;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent-strong);
+    background: rgba(88, 184, 255, 0.1);
+    padding: 6px 10px;
+    border-radius: 8px;
+}
+
+.subject-card h2 {
+    margin: 0;
+    font-family: "Outfit", sans-serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.subject-description {
+    color: var(--muted);
+    margin: 0;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.status-indicator {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(88, 184, 255, 0.1);
+    color: var(--accent-strong);
+}
+
+.status-indicator.active {
+    background: rgba(76, 201, 140, 0.16);
+    color: #155f3f;
+}
+
+/* Admin Form Styles */
+.add-subject-form {
+    margin-bottom: 24px;
+}
+
+.form-group {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group textarea {
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    padding: 12px 14px;
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.96);
+    font-family: inherit;
+    line-height: 1.45;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: 2px solid rgba(88, 184, 255, 0.22);
+    border-color: rgba(88, 184, 255, 0.4);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Table Styles */
+.table-wrapper {
+    overflow-x: auto;
+    margin: 18px 0;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.88);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.data-table th {
+    background: rgba(88, 184, 255, 0.12);
+    padding: 12px 14px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--accent-strong);
+}
+
+.data-table td {
+    padding: 12px 14px;
+    border-top: 1px solid var(--line);
+}
+
+.data-table tbody tr:hover {
+    background: rgba(88, 184, 255, 0.06);
+}
+
+.data-table code {
+    background: rgba(88, 184, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+}
+
+/* Danger Button */
+.danger-btn {
+    background: rgba(220, 90, 90, 0.16);
+    color: #9b1c1c;
+    border-color: rgba(209, 68, 68, 0.5);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: background 180ms ease, transform 180ms ease;
+}
+
+.danger-btn:hover {
+    background: rgba(230, 94, 94, 0.24);
+    transform: translateY(-1px);
+}
+
+/* Student Hero Section */
+.student-hero {
+    margin-bottom: 24px;
+}
+
+/* Dark Mode Subject Card */
+body.theme-dark .subject-card {
+    background: rgba(24, 34, 49, 0.9);
+}
+
+body.theme-dark .form-group input,
+body.theme-dark .form-group textarea {
+    background: rgba(13, 22, 34, 0.92);
+    color: var(--text);
+    border-color: rgba(123, 174, 235, 0.35);
+}
+
+body.theme-dark .form-group input::placeholder,
+body.theme-dark .form-group textarea::placeholder {
+    color: rgba(181, 202, 229, 0.85);
+}
+
+body.theme-dark .data-table,
+body.theme-dark .data-table th {
+    background: rgba(19, 29, 43, 0.88);
+    color: var(--text);
+}
+
+body.theme-dark .data-table th {
+    border-bottom: 1px solid rgba(123, 174, 235, 0.22);
+}
+
+body.theme-dark .data-table td {
+    border-top-color: rgba(123, 174, 235, 0.15);
+}
+
+body.theme-dark .data-table tbody tr:hover {
+    background: rgba(77, 151, 240, 0.1);
+}
+
+body.theme-dark .danger-btn {
+    border-color: rgba(238, 120, 120, 0.56);
+    background: rgba(143, 44, 44, 0.34);
+    color: #ffdede;
+}
+
+body.theme-dark .danger-btn:hover {
+    background: rgba(180, 55, 55, 0.5);
+}
+
+/* Learning Agent Styles */
+.learning-agent-grid {
+    display: grid;
+    gap: 18px;
+}
+
+.learning-agent-card {
+    border: 1px solid var(--line);
+}
+
+.learning-agent-content {
+    margin-top: 16px;
+}
+
+.learning-agent-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+}
+
+.learning-agent-error {
+    padding: 20px;
+    border-radius: 18px;
+    background: rgba(255, 200, 200, 0.12);
+    border: 1px solid rgba(210, 100, 100, 0.24);
+}
+
+.learning-agent-error p {
+    margin: 8px 0;
+}
+
+.learning-section {
+    margin-bottom: 20px;
+}
+
+.learning-section h4 {
+    margin: 0 0 12px;
+    font-family: "Outfit", sans-serif;
+    font-size: 1rem;
+    letter-spacing: -0.02em;
+    color: var(--text);
+}
+
+.learning-section .bullet-list {
+    margin: 0;
+}
+
+.learning-section .bullet-list li {
+    margin-bottom: 8px;
+    color: var(--muted);
+    line-height: 1.7;
+}
+
+.learning-section .flowchart-text {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text);
+    white-space: pre-wrap;
+    overflow-x: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

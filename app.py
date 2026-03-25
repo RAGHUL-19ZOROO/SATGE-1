@@ -7,6 +7,7 @@ import uuid
 from werkzeug.security import generate_password_hash
 
 from config import FLASK_SECRET_KEY, SSL_CERT_FILE, SSL_KEY_FILE
+from learning_agent import generate_learning_content
 from utils.auth import (
     admin_required,
     authenticate_user,
@@ -30,6 +31,12 @@ from utils.mysql_db import get_db_connection
 from utils.student_notes import get_student_note, save_student_note
 from utils.admin_catalog import add_admin_entry, get_admin_directory
 from utils.notes_images import add_notes_image, get_notes_images
+from utils.subjects import (
+    get_all_subjects,
+    get_subject_by_id,
+    add_subject as add_new_subject,
+    delete_subject,
+)
 from utils.topic_mcq import (
     get_topic_access_map,
     get_topic_mcqs_for_student,
@@ -226,6 +233,11 @@ def db_check():
 @login_required
 def home():
     user = current_user()
+    
+    # Redirect students to student home page
+    if user and user.get("role") == "student":
+        return redirect(url_for("student_home"))
+    
     topic_access = {}
     if user and user.get("role") == "student":
         topic_access = get_topic_access_map(user["id"])
@@ -236,6 +248,25 @@ def home():
         units=list_units(),
         default_topic=get_default_topic(),
         topic_access=topic_access,
+    )
+
+
+@app.route("/student-home")
+@login_required
+def student_home():
+    """Student home page displaying available subjects."""
+    user = current_user()
+    
+    # Only students can access this page
+    if user.get("role") != "student":
+        flash("This page is only for students.", "warning")
+        return redirect(url_for("home"))
+    
+    subjects = get_all_subjects()
+    
+    return render_template(
+        "student_home.html",
+        subjects=subjects,
     )
 
 
@@ -600,6 +631,108 @@ def create_user_account():
     return jsonify({"message": f"{role.title()} account created for {full_name}."})
 
 
+@app.route("/admin/subjects-page")
+@admin_required
+def admin_subjects_page():
+    """Display subject management page for admins."""
+    subjects = get_all_subjects()
+    return render_template(
+        "admin_subjects.html",
+        subjects=subjects,
+    )
+
+
+@app.route("/admin/add-subject", methods=["POST"])
+@admin_required
+def add_subject_route():
+    """Add a new subject (for form submission)."""
+    name = (request.form.get("name") or "").strip()
+    code = (request.form.get("code") or "").strip()
+    description = (request.form.get("description") or "").strip()
+
+    if not name:
+        flash("Subject name is required.", "warning")
+        return redirect(url_for("admin_subjects_page"))
+
+    if not code:
+        flash("Subject code is required.", "warning")
+        return redirect(url_for("admin_subjects_page"))
+
+    try:
+        subject = add_new_subject(name, code, description)
+        if subject:
+            flash(f"Subject '{name}' added successfully!", "success")
+        else:
+            flash(f"Error adding subject. Please check if the code or name already exists.", "warning")
+    except Exception as e:
+        flash(f"Error adding subject: {str(e)}", "warning")
+
+    return redirect(url_for("admin_subjects_page"))
+
+
+@app.route("/admin/delete-subject/<int:subject_id>", methods=["POST"])
+@admin_required
+def delete_subject_route(subject_id):
+    """Delete a subject."""
+    subject = get_subject_by_id(subject_id)
+
+    if not subject:
+        flash("Subject not found.", "warning")
+        return redirect(url_for("admin_subjects_page"))
+
+    try:
+        if delete_subject(subject_id):
+            flash(f"Subject '{subject['name']}' deleted successfully!", "success")
+        else:
+            flash("Error deleting subject.", "warning")
+    except Exception as e:
+        flash(f"Error deleting subject: {str(e)}", "warning")
+
+    return redirect(url_for("admin_subjects_page"))
+
+
+@app.route("/subject/<int:subject_id>")
+@login_required
+def subject_detail(subject_id):
+    """Subject detail page (shows course content for that subject)."""
+    user = current_user()
+
+    if user.get("role") != "student":
+        flash("This page is only for students.", "warning")
+        return redirect(url_for("home"))
+
+    subject = get_subject_by_id(subject_id)
+    if not subject:
+        flash("Subject not found.", "warning")
+        return redirect(url_for("student_home"))
+
+    # For now, redirect to the topic page (existing course structure)
+    return render_template(
+        "subject_detail.html",
+        subject=subject,
+        course=get_course(),
+    )
+
+
+@app.route("/subject/<int:subject_id>/content")
+@login_required
+def subject_content(subject_id):
+    """Subject content page (main learning content)."""
+    user = current_user()
+
+    if user.get("role") != "student":
+        flash("This page is only for students.", "warning")
+        return redirect(url_for("home"))
+
+    subject = get_subject_by_id(subject_id)
+    if not subject:
+        flash("Subject not found.", "warning")
+        return redirect(url_for("student_home"))
+
+    # Redirect to the default topic for now (existing structure)
+    return redirect(url_for("topic_page", topic_slug=get_default_topic() or ""))
+
+
 @app.route("/dm")
 @login_required
 def dm_page():
@@ -853,6 +986,34 @@ def topic_mcq_attempt(topic_slug):
             },
         }
     )
+
+
+@app.route("/topic/<topic_slug>/learning-agent", methods=["GET"])
+@login_required
+def topic_learning_agent(topic_slug):
+    """Generate AI learning content for a topic."""
+    topic = get_topic(topic_slug)
+    if not topic:
+        return jsonify({"error": "Unknown topic."}), 404
+
+    user = current_user()
+    if user.get("role") == "student":
+        topic_access = get_topic_access_map(user["id"])
+        if not topic_access.get(topic_slug, False):
+            return jsonify({
+                "error": "Topic is locked. Pass previous topic MCQ with more than 80% to unlock."
+            }), 403
+
+    # Generate learning content using the learning agent
+    try:
+        result = generate_learning_content(topic_slug)
+    except Exception as e:
+        # If API call fails, return error message
+        return jsonify({
+            "error": f"Unable to generate learning content. Please try again later. ({str(e)[:100]})"
+        }), 503
+    
+    return jsonify(result)
 
 
 @app.route("/staff/unit", methods=["POST"])
