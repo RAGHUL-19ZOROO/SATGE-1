@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ assignment.subject_code }} | {{ app_name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v={{ asset_version('css/style.css') }}">
+</head>
+<body data-page="staff-home">
+    <div class="page-shell">
+        <header class="topbar">
+            <a class="brand" href="/">{{ app_name }}</a>
+            <nav class="topbar-links topbar-user">
+                <span class="user-chip">{{ current_user.name }} &middot; {{ current_user.role|title }}</span>
+                <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
+                <a href="/staff">Staff Home</a>
+                <a href="/staff/create-content">General Content</a>
+                <a href="/logout">Logout</a>
+            </nav>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-stack page-flash-stack">
+                {% for category, message in messages %}
+                <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="panel teacher-hero">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">{{ assignment.department_code }} &middot; Semester {{ assignment.semester_no }} &middot; {{ assignment.class_name }}</p>
+                    <h1>{{ assignment.subject_code }} - {{ assignment.subject_name }}</h1>
+                    <p class="panel-text">Add a unit, topic, and notes file for this mapped class. Notes metadata is stored separately in MySQL.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="admin-grid">
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Class Content</p>
+                        <h2>Add Unit, Topic, and Notes</h2>
+                    </div>
+                </div>
+                <form class="upload-form" method="POST" action="/staff/assignment/{{ assignment.id }}/notes" enctype="multipart/form-data">
+                    <label for="unitTitle">Unit Title</label>
+                    <input id="unitTitle" name="unit_title" type="text" placeholder="Example: Unit 1 - Introduction" required>
+
+                    <label for="topicTitle">Topic Title</label>
+                    <input id="topicTitle" name="topic_title" type="text" placeholder="Example: Process Concept" required>
+
+                    <label for="topicDescription">Topic Description</label>
+                    <textarea id="topicDescription" name="description" rows="4" placeholder="Short summary for students"></textarea>
+
+                    <label for="youtubeUrl">YouTube Video Link</label>
+                    <input id="youtubeUrl" name="youtube_url" type="url" placeholder="https://www.youtube.com/watch?v=...">
+
+                    <label for="noteTitle">Notes Title</label>
+                    <input id="noteTitle" name="note_title" type="text" placeholder="Example: Unit 1 Notes">
+
+                    <label for="notesFile">Notes File</label>
+                    <input id="notesFile" name="notes_file" type="file" accept=".txt,.pdf" required>
+
+                    <button class="primary-btn" type="submit">Save Class Content</button>
+                </form>
+            </article>
+
+            <article class="panel admin-card lesson-grid-wide">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Saved Notes</p>
+                        <h2>Previous Uploads</h2>
+                    </div>
+                </div>
+                <div class="admin-list">
+                    {% for note in notes %}
+                    <article class="admin-list-item">
+                        <strong>{{ note.note_title }}</strong>
+                        <p class="panel-text">{{ note.unit_title }} &middot; {{ note.topic_title }} &middot; {{ note.original_file_name }}</p>
+                    </article>
+                    {% else %}
+                    <p class="panel-text">No notes uploaded for this mapped class yet.</p>
+                    {% endfor %}
+                </div>
+            </article>
+        </section>
+    </div>
+
+    <script src="/static/js/main.js?v={{ asset_version('js/main.js') }}"></script>
+</body>
+</html>

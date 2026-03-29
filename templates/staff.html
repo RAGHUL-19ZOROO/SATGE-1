@@ -14,7 +14,7 @@
         <header class="topbar">
             <a class="brand" href="/">{{ app_name }}</a>
             <nav class="topbar-links topbar-user">
-                <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <span class="user-chip">{{ current_user.name }} &middot; {{ current_user.role|title }}</span>
                 <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
                 <a href="/">Home</a>
                 <a href="/dm">DM</a>
@@ -36,17 +36,40 @@
             <div class="panel-header">
                 <div>
                     <p class="eyebrow">Staff Panel</p>
-                    <h1>Choose Your Workflow</h1>
-                    <p class="panel-text">Use separate pages to create course content, add new text content, or update existing text content with cleaner navigation.</p>
+                    <h1>Your Assigned Classes</h1>
+                    <p class="panel-text">Open a mapped subject to add units, topics, and notes for the class you are handling.</p>
                 </div>
             </div>
         </section>
 
         <section class="teacher-grid">
+            {% if assignments %}
+                {% for item in assignments %}
+                <article class="panel teacher-card">
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow">{{ item.department_code }} &middot; Semester {{ item.semester_no }}</p>
+                            <h2>{{ item.subject_code }} - {{ item.subject_name }}</h2>
+                            <p class="panel-text">Class: {{ item.class_name }} &middot; {{ item.department_name }}</p>
+                        </div>
+                    </div>
+                    <a class="primary-btn full-width" href="/staff/assignment/{{ item.id }}">Open This Class</a>
+                </article>
+                {% endfor %}
+            {% elif assignment_error %}
+                <article class="panel teacher-card lesson-grid-wide">
+                    <p class="panel-text">{{ assignment_error }}</p>
+                </article>
+            {% else %}
+                <article class="panel teacher-card lesson-grid-wide">
+                    <p class="panel-text">No subject has been mapped to your account yet. Ask the admin to assign your department, semester, subject, and class.</p>
+                </article>
+            {% endif %}
+
             <article class="panel teacher-card">
                 <div class="panel-header">
                     <div>
-                        <p class="eyebrow">Content Setup</p>
+                        <p class="eyebrow">General Tools</p>
                         <h2>Create Content</h2>
                         <p class="panel-text">Create units/topics, upload notes, notes images, and MCQ JSON.</p>
                     </div>

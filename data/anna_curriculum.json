@@ -1,4 +1,18 @@
 {
-  "departments": [],
-  "subjects": []
+  "departments": [
+    {
+      "slug": "aids",
+      "code": "AI&DS",
+      "name": "Artificial intelligence and data science"
+    }
+  ],
+  "subjects": [
+    {
+      "slug": "ad25201",
+      "department_slug": "aids",
+      "subject_code": "AD25201",
+      "title": "Python for data science",
+      "semester": "2"
+    }
+  ]
 }

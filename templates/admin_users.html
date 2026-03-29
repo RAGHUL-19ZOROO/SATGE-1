@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Users | {{ app_name }}</title>
+    <title>Staff and Student Mapping | {{ app_name }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,10 +14,9 @@
         <header class="topbar">
             <a class="brand" href="/">{{ app_name }}</a>
             <nav class="topbar-links topbar-user">
-                <span class="user-chip">{{ current_user.name }} · {{ current_user.role|title }}</span>
+                <span class="user-chip">{{ current_user.name }} &middot; {{ current_user.role|title }}</span>
                 <button class="theme-toggle" type="button" aria-pressed="false">Dark Mode</button>
                 <a href="/admin">Admin Home</a>
-                <a href="/admin/directory-page">Directory</a>
                 <a href="/admin/curriculum-page">Curriculum</a>
                 <a href="/dm">DM</a>
                 <a href="/logout">Logout</a>
@@ -38,40 +37,156 @@
             <div class="panel-header">
                 <div>
                     <p class="eyebrow">Admin Page</p>
-                    <h1>User Account Management</h1>
-                    <p class="panel-text">Create and review staff and student login accounts.</p>
+                    <h1>Staff and Student Setup</h1>
+                    <p class="panel-text">Create departments, semesters, subject mappings, staff assignments, and bulk student imports in one workflow.</p>
                 </div>
             </div>
+        </section>
+
+        {% if academic.error %}
+        <section class="panel">
+            <p class="panel-text">{{ academic.error }}</p>
+        </section>
+        {% endif %}
+
+        <section class="admin-grid">
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Step 1</p>
+                        <h2>Create Department</h2>
+                    </div>
+                </div>
+                <form class="upload-form" method="POST" action="/admin/academic/department">
+                    <label for="departmentCode">Department Code</label>
+                    <input id="departmentCode" name="code" type="text" placeholder="Example: CSE" required>
+
+                    <label for="departmentName">Department Name</label>
+                    <input id="departmentName" name="name" type="text" placeholder="Example: Computer Science and Engineering" required>
+
+                    <button class="primary-btn" type="submit">Add Department</button>
+                </form>
+            </article>
+
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Step 2</p>
+                        <h2>Create Semester</h2>
+                    </div>
+                </div>
+                <form class="upload-form" method="POST" action="/admin/academic/semester">
+                    <label for="semesterNumber">Semester Number</label>
+                    <input id="semesterNumber" name="semester_no" type="number" min="1" placeholder="Example: 5" required>
+
+                    <label for="semesterTitle">Semester Title</label>
+                    <input id="semesterTitle" name="title" type="text" placeholder="Example: Semester 5">
+
+                    <button class="primary-btn" type="submit">Add Semester</button>
+                </form>
+            </article>
+
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Step 3</p>
+                        <h2>Map Subject</h2>
+                    </div>
+                </div>
+                <form class="upload-form" method="POST" action="/admin/academic/subject">
+                    <label for="subjectDepartment">Department</label>
+                    <select id="subjectDepartment" name="department_id" required>
+                        <option value="">Choose department</option>
+                        {% for department in academic.departments %}
+                        <option value="{{ department.id }}">{{ department.code }} - {{ department.name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="subjectSemester">Semester</label>
+                    <select id="subjectSemester" name="semester_id" required>
+                        <option value="">Choose semester</option>
+                        {% for semester in academic.semesters %}
+                        <option value="{{ semester.id }}">Sem {{ semester.semester_no }} - {{ semester.title }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="subjectCode">Subject Code</label>
+                    <input id="subjectCode" name="subject_code" type="text" placeholder="Example: CS3591" required>
+
+                    <label for="subjectName">Subject Name</label>
+                    <input id="subjectName" name="subject_name" type="text" placeholder="Example: Operating Systems" required>
+
+                    <button class="primary-btn" type="submit">Map Subject</button>
+                </form>
+            </article>
         </section>
 
         <section class="admin-grid">
             <article class="panel admin-card">
                 <div class="panel-header">
                     <div>
-                        <p class="eyebrow">Accounts</p>
-                        <h2>Create Staff or Student Login</h2>
+                        <p class="eyebrow">Step 4</p>
+                        <h2>Add Staff With Mapping</h2>
+                        <p class="panel-text">This creates the login and maps the staff member to a subject, semester, and class.</p>
                     </div>
                 </div>
+                <form class="upload-form" method="POST" action="/admin/staff/create">
+                    <label for="staffName">Full Name</label>
+                    <input id="staffName" name="full_name" type="text" placeholder="Example: Priya Devi" required>
 
-                <form id="adminUserForm" class="upload-form">
-                    <label for="adminUserName">Full Name</label>
-                    <input id="adminUserName" name="full_name" type="text" placeholder="Example: John Doe" required>
+                    <label for="staffEmail">Email</label>
+                    <input id="staffEmail" name="email" type="email" placeholder="staff@college.edu" required>
 
-                    <label for="adminUserEmail">Email</label>
-                    <input id="adminUserEmail" name="email" type="email" placeholder="name@college.edu" required>
+                    <label for="staffPassword">Password</label>
+                    <input id="staffPassword" name="password" type="password" placeholder="Minimum 6 characters" required>
 
-                    <label for="adminUserPassword">Password</label>
-                    <input id="adminUserPassword" name="password" type="password" placeholder="Minimum 6 characters" required>
-
-                    <label for="adminUserRole">Role</label>
-                    <select id="adminUserRole" name="role" required>
-                        <option value="">Choose role</option>
-                        <option value="staff">Staff</option>
-                        <option value="student">Student</option>
+                    <label for="staffSubject">Mapped Subject</label>
+                    <select id="staffSubject" name="academic_subject_id" required>
+                        <option value="">Choose mapped subject</option>
+                        {% for subject in academic.academic_subjects %}
+                        <option value="{{ subject.id }}">{{ subject.department_code }} &middot; Sem {{ subject.semester_no }} &middot; {{ subject.subject_code }} - {{ subject.subject_name }}</option>
+                        {% endfor %}
                     </select>
 
-                    <button class="primary-btn" type="submit">Create Account</button>
-                    <p id="adminUserStatus" class="panel-text" role="status" aria-live="polite"></p>
+                    <label for="staffClass">Class / Section</label>
+                    <input id="staffClass" name="class_name" type="text" placeholder="Example: CSE-A" required>
+
+                    <button class="primary-btn" type="submit">Create Staff Mapping</button>
+                </form>
+            </article>
+
+            <article class="panel admin-card">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Step 5</p>
+                        <h2>Upload Students CSV</h2>
+                        <p class="panel-text">CSV columns: <code>full_name,email,password,register_number,class_name</code></p>
+                    </div>
+                </div>
+                <form class="upload-form" method="POST" action="/admin/students/upload" enctype="multipart/form-data">
+                    <label for="studentDepartment">Department</label>
+                    <select id="studentDepartment" name="department_id" required>
+                        <option value="">Choose department</option>
+                        {% for department in academic.departments %}
+                        <option value="{{ department.id }}">{{ department.code }} - {{ department.name }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="studentSemester">Semester</label>
+                    <select id="studentSemester" name="semester_id" required>
+                        <option value="">Choose semester</option>
+                        {% for semester in academic.semesters %}
+                        <option value="{{ semester.id }}">Sem {{ semester.semester_no }} - {{ semester.title }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="studentClass">Default Class / Section</label>
+                    <input id="studentClass" name="class_name" type="text" placeholder="Example: CSE-A" required>
+
+                    <label for="studentsCsv">Student CSV File</label>
+                    <input id="studentsCsv" name="students_csv" type="file" accept=".csv,text/csv" required>
+
+                    <button class="primary-btn" type="submit">Import Students</button>
                 </form>
             </article>
 
@@ -87,7 +202,7 @@
                         {% for item in admin_users %}
                         <article class="admin-list-item">
                             <strong>{{ item.full_name }}</strong>
-                            <p class="panel-text">{{ item.email }} · {{ item.role|title }} {% if not item.is_active %}· Inactive{% endif %}</p>
+                            <p class="panel-text">{{ item.email }} &middot; {{ item.role|title }} {% if not item.is_active %}&middot; Inactive{% endif %}</p>
                         </article>
                         {% endfor %}
                     {% elif admin_users_error %}
@@ -95,6 +210,65 @@
                     {% else %}
                         <p class="panel-text">No users found yet.</p>
                     {% endif %}
+                </div>
+            </article>
+        </section>
+
+        <section class="admin-grid">
+            <article class="panel admin-card lesson-grid-wide">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Mapped Subjects</p>
+                        <h2>Department and Semester Subject Map</h2>
+                    </div>
+                </div>
+                <div class="admin-list">
+                    {% for subject in academic.academic_subjects %}
+                    <article class="admin-list-item">
+                        <strong>{{ subject.subject_code }} - {{ subject.subject_name }}</strong>
+                        <p class="panel-text">{{ subject.department_code }} &middot; Semester {{ subject.semester_no }} ({{ subject.semester_title }})</p>
+                    </article>
+                    {% else %}
+                    <p class="panel-text">No mapped subjects yet.</p>
+                    {% endfor %}
+                </div>
+            </article>
+
+            <article class="panel admin-card lesson-grid-wide">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Staff</p>
+                        <h2>Current Staff Assignments</h2>
+                    </div>
+                </div>
+                <div class="admin-list">
+                    {% for item in academic.staff_assignments %}
+                    <article class="admin-list-item">
+                        <strong>{{ item.staff_name }}</strong>
+                        <p class="panel-text">{{ item.staff_email }} &middot; {{ item.department_code }} &middot; Sem {{ item.semester_no }} &middot; {{ item.subject_code }} &middot; {{ item.class_name }}</p>
+                    </article>
+                    {% else %}
+                    <p class="panel-text">No staff mappings yet.</p>
+                    {% endfor %}
+                </div>
+            </article>
+
+            <article class="panel admin-card lesson-grid-wide">
+                <div class="panel-header">
+                    <div>
+                        <p class="eyebrow">Students</p>
+                        <h2>Imported Students</h2>
+                    </div>
+                </div>
+                <div class="admin-list">
+                    {% for item in academic.student_profiles %}
+                    <article class="admin-list-item">
+                        <strong>{{ item.student_name }}</strong>
+                        <p class="panel-text">{{ item.student_email }} &middot; {{ item.department_code }} &middot; Sem {{ item.semester_no }} &middot; {{ item.class_name }}{% if item.register_number %} &middot; {{ item.register_number }}{% endif %}</p>
+                    </article>
+                    {% else %}
+                    <p class="panel-text">No students imported yet.</p>
+                    {% endfor %}
                 </div>
             </article>
         </section>

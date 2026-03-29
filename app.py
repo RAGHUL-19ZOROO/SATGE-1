@@ -18,6 +18,23 @@ from utils.auth import (
     record_login_audit,
     teacher_required,
 )
+from utils.academic_management import (
+    create_academic_subject,
+    create_department as create_department_record,
+    create_semester,
+    create_staff_assignment,
+    ensure_academic_schema,
+    get_staff_assignment_for_user,
+    import_students_csv,
+    list_academic_subjects,
+    list_departments,
+    list_notes_for_assignment,
+    list_semesters,
+    list_staff_assignments,
+    list_staff_assignments_for_user,
+    list_student_profiles,
+    save_staff_note,
+)
 from utils.anna_curriculum import add_department, add_subject, get_curriculum
 from utils.direct_messages import get_thread, list_dm_contacts, send_message
 from utils.file_handler import (
@@ -66,6 +83,10 @@ app.config["SESSION_COOKIE_SECURE"] = bool(SSL_CERT_FILE and SSL_KEY_FILE)
 app.config["SESSION_REFRESH_EACH_REQUEST"] = False
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 604800
 APP_NAME = "Learning Paradiso"
+try:
+    ensure_academic_schema()
+except MySQLError:
+    pass
 
 
 def asset_version(relative_path):
@@ -167,6 +188,26 @@ def get_admin_users_payload():
     except MySQLError:
         user_error = "Unable to load user list from database."
     return users, user_error
+
+
+def get_admin_academic_payload():
+    payload = {
+        "departments": [],
+        "semesters": [],
+        "academic_subjects": [],
+        "staff_assignments": [],
+        "student_profiles": [],
+        "error": "",
+    }
+    try:
+        payload["departments"] = list_departments()
+        payload["semesters"] = list_semesters()
+        payload["academic_subjects"] = list_academic_subjects()
+        payload["staff_assignments"] = list_staff_assignments()
+        payload["student_profiles"] = list_student_profiles()
+    except MySQLError:
+        payload["error"] = "Unable to load academic management data from MySQL."
+    return payload
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -317,7 +358,31 @@ def topic_page(topic_slug):
 @app.route("/staff")
 @teacher_required
 def staff_page():
-    return render_template("staff.html", course=get_course())
+    assignments = []
+    assignment_error = ""
+    try:
+        assignments = list_staff_assignments_for_user(current_user()["id"])
+    except MySQLError:
+        assignment_error = "Unable to load your subject mapping right now."
+    return render_template("staff.html", course=get_course(), assignments=assignments, assignment_error=assignment_error)
+
+
+@app.route("/staff/assignment/<int:assignment_id>")
+@teacher_required
+def staff_assignment_page(assignment_id):
+    assignment = get_staff_assignment_for_user(assignment_id, current_user()["id"])
+    if not assignment:
+        flash("That class mapping was not found.", "warning")
+        return redirect(url_for("staff_page"))
+
+    return render_template(
+        "staff_assignment.html",
+        assignment=assignment,
+        notes=list_notes_for_assignment(assignment_id),
+        units=list_units(),
+        topics=list_topics(),
+        course=get_course(),
+    )
 
 
 @app.route("/staff/create-content")
@@ -487,6 +552,7 @@ def upload_text_content_image():
 @admin_required
 def admin_page():
     users, user_error = get_admin_users_payload()
+    academic = get_admin_academic_payload()
 
     directory = get_admin_directory()
     curriculum = get_curriculum()
@@ -497,6 +563,7 @@ def admin_page():
         curriculum=curriculum,
         admin_users=users,
         admin_users_error=user_error,
+        academic=academic,
         course=get_course(),
     )
 
@@ -525,10 +592,12 @@ def admin_curriculum_page():
 @admin_required
 def admin_users_page():
     users, user_error = get_admin_users_payload()
+    academic = get_admin_academic_payload()
     return render_template(
         "admin_users.html",
         admin_users=users,
         admin_users_error=user_error,
+        academic=academic,
         course=get_course(),
     )
 
@@ -629,6 +698,90 @@ def create_user_account():
         connection.close()
 
     return jsonify({"message": f"{role.title()} account created for {full_name}."})
+
+
+@app.route("/admin/academic/department", methods=["POST"])
+@admin_required
+def create_department_route():
+    try:
+        create_department_record(request.form.get("code"), request.form.get("name"))
+        flash("Department created successfully.", "success")
+    except ValueError as exc:
+        flash(str(exc), "warning")
+    except MySQLError:
+        flash("Unable to save department in MySQL.", "warning")
+    return redirect(url_for("admin_users_page"))
+
+
+@app.route("/admin/academic/semester", methods=["POST"])
+@admin_required
+def create_semester_route():
+    try:
+        create_semester(request.form.get("semester_no"), request.form.get("title"))
+        flash("Semester created successfully.", "success")
+    except ValueError as exc:
+        flash(str(exc), "warning")
+    except MySQLError:
+        flash("Unable to save semester in MySQL.", "warning")
+    return redirect(url_for("admin_users_page"))
+
+
+@app.route("/admin/academic/subject", methods=["POST"])
+@admin_required
+def create_academic_subject_route():
+    try:
+        create_academic_subject(
+            request.form.get("department_id"),
+            request.form.get("semester_id"),
+            request.form.get("subject_code"),
+            request.form.get("subject_name"),
+        )
+        flash("Subject mapped to department and semester successfully.", "success")
+    except ValueError as exc:
+        flash(str(exc), "warning")
+    except MySQLError:
+        flash("Unable to save mapped subject in MySQL.", "warning")
+    return redirect(url_for("admin_users_page"))
+
+
+@app.route("/admin/staff/create", methods=["POST"])
+@admin_required
+def create_staff_assignment_route():
+    try:
+        create_staff_assignment(
+            request.form.get("full_name"),
+            request.form.get("email"),
+            request.form.get("password"),
+            request.form.get("academic_subject_id"),
+            request.form.get("class_name"),
+        )
+        flash("Staff account and subject mapping created successfully.", "success")
+    except ValueError as exc:
+        flash(str(exc), "warning")
+    except MySQLError:
+        flash("Unable to save staff mapping in MySQL.", "warning")
+    return redirect(url_for("admin_users_page"))
+
+
+@app.route("/admin/students/upload", methods=["POST"])
+@admin_required
+def upload_students_route():
+    try:
+        result = import_students_csv(
+            request.files.get("students_csv"),
+            request.form.get("department_id"),
+            request.form.get("semester_id"),
+            request.form.get("class_name"),
+        )
+        if result["created"]:
+            flash(f"{result['created']} students imported successfully.", "success")
+        if result["failed"]:
+            flash("Some rows were skipped: " + " | ".join(result["failed"][:5]), "warning")
+    except ValueError as exc:
+        flash(str(exc), "warning")
+    except MySQLError:
+        flash("Unable to import students into MySQL.", "warning")
+    return redirect(url_for("admin_users_page"))
 
 
 @app.route("/admin/subjects-page")
@@ -1054,6 +1207,54 @@ def create_topic_route():
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
+
+
+@app.route("/staff/assignment/<int:assignment_id>/notes", methods=["POST"])
+@teacher_required
+def upload_assignment_notes_route(assignment_id):
+    assignment = get_staff_assignment_for_user(assignment_id, current_user()["id"])
+    if not assignment:
+        flash("That class mapping was not found.", "warning")
+        return redirect(url_for("staff_page"))
+
+    unit_title = (request.form.get("unit_title") or "").strip()
+    topic_title = (request.form.get("topic_title") or "").strip()
+    topic_description = (request.form.get("description") or "").strip()
+    youtube_url = (request.form.get("youtube_url") or "").strip()
+    notes_file = request.files.get("notes_file")
+
+    try:
+        existing_unit = next((unit for unit in list_units() if unit["title"].strip().lower() == unit_title.lower()), None)
+        if existing_unit:
+            unit = existing_unit
+        else:
+            unit = create_unit(unit_title)
+
+        existing_topic = next((topic for topic in list_topics() if topic["title"].strip().lower() == topic_title.lower()), None)
+        if existing_topic:
+            topic = existing_topic
+        else:
+            topic = create_topic(unit["slug"], topic_title, topic_description, youtube_url, no_video=not youtube_url)
+
+        if notes_file and notes_file.filename:
+            save_notes_for_topic_slug(topic["slug"], notes_file)
+            notes_file.stream.seek(0)
+            save_staff_note(
+                assignment_id,
+                topic["slug"],
+                unit["title"],
+                topic["title"],
+                request.form.get("note_title"),
+                notes_file,
+            )
+
+        flash(f"Content saved for {topic['title']}.", "success")
+    except ValueError as exc:
+        flash(str(exc), "warning")
+    except Exception as exc:
+        flash(str(exc), "warning")
+
+    return redirect(url_for("staff_assignment_page", assignment_id=assignment_id))
 
 
 @app.route("/download/<topic_slug>")
